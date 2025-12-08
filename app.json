@@ -8,12 +8,14 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nkcelik.app"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#DC2626"
-      }
+      },
+      "package": "com.nkcelik.app"
     },
     "web": {
       "bundler": "metro",
