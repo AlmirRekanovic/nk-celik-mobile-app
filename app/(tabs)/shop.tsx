@@ -1,43 +1,13 @@
-import { View, Text, StyleSheet, Platform, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 import { useAuth } from '@/contexts/AuthContext';
-import { ExternalLink } from 'lucide-react-native';
+import { useState } from 'react';
 
 export default function ShopScreen() {
   const { member, isGuest } = useAuth();
+  const [loading, setLoading] = useState(true);
   const webShopUrl = 'https://nkcelik.ba/shop';
-
-  const openShop = async () => {
-    const supported = await Linking.canOpenURL(webShopUrl);
-    if (supported) {
-      await Linking.openURL(webShopUrl);
-    }
-  };
-
-  if (Platform.OS === 'web') {
-    return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Prodavnica</Text>
-          {member && (
-            <Text style={styles.headerSubtitle}>
-              {member.first_name} {member.last_name}
-            </Text>
-          )}
-          {isGuest && (
-            <Text style={styles.headerSubtitle}>Gost</Text>
-          )}
-        </View>
-
-        <WebView
-          source={{ uri: webShopUrl }}
-          style={styles.webContainer}
-        />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -54,19 +24,24 @@ export default function ShopScreen() {
         )}
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.infoCard}>
-          <ExternalLink size={48} color="#DC2626" />
-          <Text style={styles.infoTitle}>Posjetite našu online prodavnicu</Text>
-          <Text style={styles.infoDescription}>
-            Kliknite na dugme ispod da otvorite NK Čelik online prodavnicu u Vašem internet pregledniku.
-          </Text>
-          <TouchableOpacity style={styles.openButton} onPress={openShop}>
-            <ExternalLink size={20} color="#FFFFFF" />
-            <Text style={styles.openButtonText}>Otvori prodavnicu</Text>
-          </TouchableOpacity>
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#DC2626" />
+          <Text style={styles.loadingText}>Učitavanje prodavnice...</Text>
         </View>
-      </View>
+      )}
+
+      <WebView
+        source={{ uri: webShopUrl }}
+        style={styles.webContainer}
+        onLoadStart={() => setLoading(true)}
+        onLoadEnd={() => setLoading(false)}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        startInLoadingState={true}
+        scalesPageToFit={true}
+        allowsBackForwardNavigationGestures={true}
+      />
     </View>
   );
 }
@@ -96,51 +71,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  content: {
-    flex: 1,
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    backgroundColor: '#F9FAFB',
+    zIndex: 1,
   },
-  infoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 32,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    maxWidth: 400,
-  },
-  infoTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginTop: 24,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  infoDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  openButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  openButtonText: {
+  loadingText: {
+    marginTop: 12,
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#6B7280',
   },
 });

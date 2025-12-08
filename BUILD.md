@@ -2,6 +2,23 @@
 
 This guide explains how to build APK and IPA files for testing with friends.
 
+## Version History
+
+### VERSION 1.0.0 (Initial Release)
+- News feed from WordPress
+- Voting/polls system with admin panel
+- Member authentication
+- Shop tab with external link to WooCommerce store
+- Settings and profile management
+
+### VERSION 2.0.0 (Current)
+**Major Update: Embedded Store**
+- Store now loads directly inside the app (WebView)
+- No external browser needed
+- Loading indicator for better UX
+- Full shopping experience within the app
+- All features from v1.0.0 maintained
+
 ## Prerequisites
 
 1. **Expo Account** (Free)
