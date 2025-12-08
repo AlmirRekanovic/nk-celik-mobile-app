@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { PollWithVotes } from '@/types/auth';
 import { getActivePolls, castVote } from '@/services/polls';
@@ -41,6 +42,14 @@ export default function VotingScreen() {
 
     initialize();
   }, [member]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!loading) {
+        loadPolls();
+      }
+    }, [member, loading])
+  );
 
   const handleVote = async (pollId: string, optionValue: string) => {
     if (!member) {

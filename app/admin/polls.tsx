@@ -136,6 +136,15 @@ export default function AdminPollsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => router.push(`/admin/edit-poll?id=${poll.id}`)}>
+          <Edit3 size={20} color="#2563EB" />
+          <Text style={[styles.actionButtonText, styles.actionButtonTextPrimary]}>
+            Uredi
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.actionButton, styles.actionButtonDanger]}
           onPress={() => handleDeletePoll(poll.id, poll.title)}>
           <Trash2 size={20} color="#DC2626" />
@@ -381,6 +390,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#4B5563',
+  },
+  actionButtonTextPrimary: {
+    color: '#2563EB',
   },
   actionButtonTextDanger: {
     color: '#DC2626',

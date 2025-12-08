@@ -1,6 +1,33 @@
 import { supabase } from './supabase';
 import { Poll, PollVote, PollWithVotes } from '@/types/auth';
 
+export async function getPoll(pollId: string): Promise<Poll | null> {
+  try {
+    const { data, error } = await supabase
+      .from('polls')
+      .select('*')
+      .eq('id', pollId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching poll:', error);
+      return null;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return {
+      ...data,
+      options: Array.isArray(data.options) ? data.options : [],
+    };
+  } catch (error) {
+    console.error('Error getting poll:', error);
+    return null;
+  }
+}
+
 export async function getActivePolls(memberId?: string): Promise<PollWithVotes[]> {
   try {
     const { data: polls, error: pollsError } = await supabase
