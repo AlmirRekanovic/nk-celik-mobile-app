@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Newspaper, Settings, Vote, ShoppingBag } from 'lucide-react-native';
+import { Newspaper, Settings, Vote, ShoppingBag, ScanLine } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -38,6 +38,15 @@ export default function TabLayout() {
           title: 'Prodavnica',
           tabBarIcon: ({ size, color }) => (
             <ShoppingBag size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="checkin"
+        options={{
+          title: 'Check-in',
+          tabBarIcon: ({ size, color }) => (
+            <ScanLine size={size} color={color} />
           ),
         }}
       />

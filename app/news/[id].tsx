@@ -171,28 +171,28 @@ const tagsStyles = {
   },
   h1: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '700' as const,
     color: '#1F2937',
     marginTop: 24,
     marginBottom: 16,
   },
   h2: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700' as const,
     color: '#1F2937',
     marginTop: 20,
     marginBottom: 12,
   },
   h3: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700' as const,
     color: '#1F2937',
     marginTop: 16,
     marginBottom: 8,
   },
   a: {
     color: '#DC2626',
-    textDecorationLine: 'underline',
+    textDecorationLine: 'underline' as const,
   },
   ul: {
     marginBottom: 16,
@@ -204,10 +204,10 @@ const tagsStyles = {
     marginBottom: 8,
   },
   strong: {
-    fontWeight: 'bold',
+    fontWeight: '700' as const,
   },
   em: {
-    fontStyle: 'italic',
+    fontStyle: 'italic' as const,
   },
   img: {
     marginVertical: 16,
