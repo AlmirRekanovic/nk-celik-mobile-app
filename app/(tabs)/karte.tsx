@@ -13,24 +13,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { fetchMemberTickets } from '@/services/tickets';
+import { Ticket } from '@/types/products';
 import { Ticket as TicketIcon, Calendar, Clock } from 'lucide-react-native';
 import QRCode from 'react-native-qrcode-svg';
-
-interface Ticket {
-  id: string;
-  order_id: number;
-  product_id: number;
-  ticket_code: string;
-  ticket_type: string;
-  customer_email: string;
-  customer_name: string;
-  member_id: string | null;
-  event_name: string;
-  event_date: string | null;
-  status: 'active' | 'used' | 'cancelled';
-  created_at: string;
-  updated_at: string;
-}
 
 export default function KarteScreen() {
   const { member, isGuest } = useAuth();

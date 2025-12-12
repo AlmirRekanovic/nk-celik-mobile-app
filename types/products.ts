@@ -75,4 +75,5 @@ export interface Ticket {
   check_in_time?: string;
   check_in_by?: string;
   created_at: string;
+  updated_at: string;
 }
