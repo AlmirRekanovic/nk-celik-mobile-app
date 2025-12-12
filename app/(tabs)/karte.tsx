@@ -6,32 +6,54 @@ import {
   ActivityIndicator,
   FlatList,
   TouchableOpacity,
-  Image,
   RefreshControl,
-  Linking,
+  ScrollView,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
-import { fetchProducts } from '@/services/woocommerce';
-import { Product } from '@/types/products';
-import { Ticket, ExternalLink } from 'lucide-react-native';
+import { fetchMemberTickets } from '@/services/tickets';
+import { Ticket as TicketIcon, Calendar, Clock } from 'lucide-react-native';
+import QRCode from 'react-native-qrcode-svg';
+
+interface Ticket {
+  id: string;
+  order_id: number;
+  product_id: number;
+  ticket_code: string;
+  ticket_type: string;
+  customer_email: string;
+  customer_name: string;
+  member_id: string | null;
+  event_name: string;
+  event_date: string | null;
+  status: 'active' | 'used' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+}
 
 export default function KarteScreen() {
   const { member, isGuest } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedTicketId, setExpandedTicketId] = useState<string | null>(null);
 
-  const loadProducts = async () => {
+  const loadTickets = async () => {
+    if (!member || isGuest) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
       setError(null);
-      const data = await fetchProducts();
-      setProducts(data);
+      const data = await fetchMemberTickets(member.id);
+      setTickets(data);
     } catch (err) {
       setError('Greška pri učitavanju karata');
-      console.error('Error loading products:', err);
+      console.error('Error loading tickets:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -39,67 +61,131 @@ export default function KarteScreen() {
   };
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    loadTickets();
+  }, [member]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadProducts();
+    loadTickets();
   };
 
-  const openProduct = (url: string) => {
-    Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
+  const toggleTicket = (ticketId: string) => {
+    setExpandedTicketId(expandedTicketId === ticketId ? null : ticketId);
   };
 
-  const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      style={styles.productCard}
-      onPress={() => openProduct(item.permalink)}
-      activeOpacity={0.7}
-    >
-      {item.imageUrl && (
-        <Image source={{ uri: item.imageUrl }} style={styles.productImage} resizeMode="cover" />
-      )}
-      <View style={styles.productContent}>
-        <Text style={styles.productName} numberOfLines={2}>
-          {item.name}
-        </Text>
-        {item.shortDescription ? (
-          <Text style={styles.productDescription} numberOfLines={3}>
-            {item.shortDescription.replace(/<[^>]*>/g, '')}
-          </Text>
-        ) : null}
-        <View style={styles.productFooter}>
-          <View style={styles.priceContainer}>
-            {item.onSale && item.salePrice ? (
-              <>
-                <Text style={styles.regularPrice}>{item.price} KM</Text>
-                <Text style={styles.salePrice}>{item.salePrice} KM</Text>
-              </>
-            ) : (
-              <Text style={styles.price}>{item.price} KM</Text>
-            )}
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Datum nije naveden';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('sr-BA', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return '#10B981';
+      case 'used':
+        return '#6B7280';
+      case 'cancelled':
+        return '#EF4444';
+      default:
+        return '#6B7280';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'Aktivna';
+      case 'used':
+        return 'Iskorištena';
+      case 'cancelled':
+        return 'Otkazana';
+      default:
+        return status;
+    }
+  };
+
+  const renderTicket = ({ item }: { item: Ticket }) => {
+    const isExpanded = expandedTicketId === item.id;
+
+    return (
+      <TouchableOpacity
+        style={styles.ticketCard}
+        onPress={() => toggleTicket(item.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.ticketHeader}>
+          <View style={styles.ticketInfo}>
+            <Text style={styles.ticketType} numberOfLines={2}>
+              {item.ticket_type || item.event_name}
+            </Text>
+            <View style={styles.ticketMeta}>
+              {item.event_date && (
+                <View style={styles.metaItem}>
+                  <Calendar size={14} color="#6B7280" />
+                  <Text style={styles.metaText}>{formatDate(item.event_date)}</Text>
+                </View>
+              )}
+            </View>
           </View>
-          <View style={styles.buyButton}>
-            <ExternalLink size={16} color="#FFFFFF" />
-            <Text style={styles.buyButtonText}>Kupi kartu</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
           </View>
         </View>
-        {item.stockStatus === 'outofstock' && (
-          <View style={styles.outOfStockBadge}>
-            <Text style={styles.outOfStockText}>Rasprodato</Text>
+
+        {isExpanded && (
+          <View style={styles.ticketExpanded}>
+            <View style={styles.qrContainer}>
+              <QRCode value={item.ticket_code} size={200} backgroundColor="#FFFFFF" />
+            </View>
+            <Text style={styles.qrLabel}>Skeniraj QR kod na ulazu</Text>
+            <View style={styles.ticketDetails}>
+              <Text style={styles.detailLabel}>Kod karte:</Text>
+              <Text style={styles.detailValue}>{item.ticket_code}</Text>
+              {item.event_name && (
+                <>
+                  <Text style={styles.detailLabel}>Događaj:</Text>
+                  <Text style={styles.detailValue}>{item.event_name}</Text>
+                </>
+              )}
+              <Text style={styles.detailLabel}>Naručilac:</Text>
+              <Text style={styles.detailValue}>{item.customer_name}</Text>
+            </View>
           </View>
         )}
+
+        {!isExpanded && (
+          <Text style={styles.tapToExpand}>Klikni za prikaz QR koda</Text>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  if (isGuest) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="dark" />
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Moje Karte</Text>
+        </View>
+        <View style={styles.emptyContainer}>
+          <TicketIcon size={64} color="#9CA3AF" />
+          <Text style={styles.emptyText}>Prijavite se da vidite svoje karte</Text>
+        </View>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  }
 
   if (loading) {
     return (
       <View style={styles.container}>
         <StatusBar style="dark" />
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Karte</Text>
+          <Text style={styles.headerTitle}>Moje Karte</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#DC2626" />
@@ -115,39 +201,43 @@ export default function KarteScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.headerTitle}>Karte</Text>
+            <Text style={styles.headerTitle}>Moje Karte</Text>
             {member && (
               <Text style={styles.headerSubtitle}>
                 {member.first_name} {member.last_name}
               </Text>
             )}
-            {isGuest && <Text style={styles.headerSubtitle}>Gost</Text>}
           </View>
-          <Ticket size={28} color="#FFFFFF" />
+          <TicketIcon size={28} color="#FFFFFF" />
         </View>
         <Text style={styles.headerDescription}>
-          Kupi karte za utakmice i događaje
+          {tickets.length > 0
+            ? `Imate ${tickets.length} ${tickets.length === 1 ? 'kartu' : 'karte/karata'}`
+            : 'Nemate kupljenih karata'}
         </Text>
       </View>
 
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadProducts}>
+          <TouchableOpacity style={styles.retryButton} onPress={loadTickets}>
             <Text style={styles.retryButtonText}>Pokušaj ponovo</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <FlatList
-          data={products}
-          renderItem={renderProduct}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.productList}
+          data={tickets}
+          renderItem={renderTicket}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.ticketList}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#DC2626']} />}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ticket size={64} color="#9CA3AF" />
-              <Text style={styles.emptyText}>Nema dostupnih karata trenutno</Text>
+              <TicketIcon size={64} color="#9CA3AF" />
+              <Text style={styles.emptyText}>Nemate kupljenih karata</Text>
+              <Text style={styles.emptySubtext}>
+                Karte kupljene na webu će se automatski pojaviti ovdje
+              </Text>
             </View>
           }
         />
@@ -222,102 +312,125 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  productList: {
+  ticketList: {
     padding: 16,
   },
-  productCard: {
+  ticketCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     marginBottom: 16,
-    overflow: 'hidden',
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  productImage: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#F3F4F6',
+  ticketHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
-  productContent: {
-    padding: 16,
+  ticketInfo: {
+    flex: 1,
+    marginRight: 12,
   },
-  productName: {
+  ticketType: {
     fontSize: 18,
     fontWeight: '600',
     color: '#111827',
     marginBottom: 8,
   },
-  productDescription: {
-    fontSize: 14,
+  ticketMeta: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 13,
     color: '#6B7280',
-    marginBottom: 12,
-    lineHeight: 20,
   },
-  productFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  price: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#DC2626',
-  },
-  regularPrice: {
-    fontSize: 16,
-    color: '#9CA3AF',
-    textDecorationLine: 'line-through',
-  },
-  salePrice: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#DC2626',
-  },
-  buyButton: {
-    backgroundColor: '#DC2626',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  buyButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  outOfStockBadge: {
-    marginTop: 12,
-    backgroundColor: '#FEE2E2',
+  statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
+    borderRadius: 12,
   },
-  outOfStockText: {
-    color: '#DC2626',
+  statusText: {
     fontSize: 12,
     fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  ticketExpanded: {
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingTop: 16,
+    alignItems: 'center',
+  },
+  qrContainer: {
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  qrLabel: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#DC2626',
+    textAlign: 'center',
+  },
+  ticketDetails: {
+    marginTop: 16,
+    width: '100%',
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 8,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 8,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#111827',
+    marginTop: 2,
+  },
+  tapToExpand: {
+    fontSize: 13,
+    color: '#DC2626',
+    textAlign: 'center',
+    marginTop: 4,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 60,
+    paddingHorizontal: 20,
   },
   emptyText: {
     fontSize: 16,
+    fontWeight: '600',
     color: '#6B7280',
     textAlign: 'center',
     marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginTop: 8,
   },
 });
