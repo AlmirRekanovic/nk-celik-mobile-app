@@ -1,7 +1,11 @@
 import { Tabs } from 'expo-router';
-import { Newspaper, Settings, Vote, ShoppingBag, ScanLine } from 'lucide-react-native';
+import { Newspaper, Settings, Vote, ShoppingBag, ScanLine, Ticket } from 'lucide-react-native';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function TabLayout() {
+  const { member } = useAuth();
+  const isAdmin = member?.is_admin || false;
+
   return (
     <Tabs
       screenOptions={{
@@ -33,6 +37,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="karte"
+        options={{
+          title: 'Karte',
+          tabBarIcon: ({ size, color }) => (
+            <Ticket size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="shop"
         options={{
           title: 'Prodavnica',
@@ -48,6 +61,7 @@ export default function TabLayout() {
           tabBarIcon: ({ size, color }) => (
             <ScanLine size={size} color={color} />
           ),
+          href: isAdmin ? undefined : null,
         }}
       />
       <Tabs.Screen
