@@ -180,25 +180,6 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>O aplikaciji</Text>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Izvor podataka:</Text>
-            <Text style={styles.infoValue}>nkcelik.ba</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Verzija:</Text>
-            <Text style={styles.infoValue}>1.0.0</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Developer:</Text>
-            <Text style={styles.infoValue}>Reka</Text>
-          </View>
-        </View>
-
         <View style={styles.adContainer}>
           <AdBanner size="large" />
         </View>
