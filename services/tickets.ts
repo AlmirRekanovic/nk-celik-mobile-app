@@ -41,12 +41,19 @@ export async function fetchMemberTickets(memberId: string): Promise<Ticket[]> {
   }
 }
 
-export async function fetchAllTickets(): Promise<Ticket[]> {
+export async function fetchAllTickets(
+  page: number = 1,
+  limit: number = 100
+): Promise<Ticket[]> {
   try {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
     const { data, error } = await supabase
       .from('tickets')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error('Error fetching all tickets:', error);
@@ -57,6 +64,24 @@ export async function fetchAllTickets(): Promise<Ticket[]> {
   } catch (error) {
     console.error('Error fetching all tickets:', error);
     return [];
+  }
+}
+
+export async function fetchTicketsCount(): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('tickets')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      console.error('Error fetching tickets count:', error);
+      return 0;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error fetching tickets count:', error);
+    return 0;
   }
 }
 
