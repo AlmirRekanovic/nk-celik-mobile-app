@@ -15,6 +15,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PollWithVotes } from '@/types/auth';
 import { getActivePolls, castVote } from '@/services/polls';
 import { CheckCircle2, Circle, BarChart3 } from 'lucide-react-native';
+import AdBanner from '@/components/AdBanner';
+import AdInFeed from '@/components/AdInFeed';
 
 export default function VotingScreen() {
   const { member, isGuest } = useAuth();
@@ -111,48 +113,53 @@ export default function VotingScreen() {
     );
   };
 
-  const renderPoll = (poll: PollWithVotes) => (
-    <View key={poll.id} style={styles.pollCard}>
-      <View style={styles.pollHeader}>
-        <Text style={styles.pollTitle}>{poll.title}</Text>
-        {poll.user_vote && (
-          <View style={styles.votedBadge}>
-            <CheckCircle2 size={16} color="#059669" />
-            <Text style={styles.votedText}>Glasali ste</Text>
+  const renderPoll = (poll: PollWithVotes, index: number) => (
+    <>
+      <View key={poll.id} style={styles.pollCard}>
+        <View style={styles.pollHeader}>
+          <Text style={styles.pollTitle}>{poll.title}</Text>
+          {poll.user_vote && (
+            <View style={styles.votedBadge}>
+              <CheckCircle2 size={16} color="#059669" />
+              <Text style={styles.votedText}>Glasali ste</Text>
+            </View>
+          )}
+        </View>
+
+        {poll.description ? (
+          <Text style={styles.pollDescription}>{poll.description}</Text>
+        ) : null}
+
+        <View style={styles.optionsContainer}>
+          {poll.options.map(option => renderPollOption(poll, option))}
+        </View>
+
+        <View style={styles.pollFooter}>
+          <View style={styles.pollStats}>
+            <BarChart3 size={16} color="#6B7280" />
+            <Text style={styles.pollStatsText}>
+              Ukupno glasova: {poll.total_votes}
+            </Text>
+          </View>
+          {poll.ends_at && (
+            <Text style={styles.pollEndsAt}>
+              Završava: {new Date(poll.ends_at).toLocaleDateString('bs-BA')}
+            </Text>
+          )}
+        </View>
+
+        {!member && (
+          <View style={styles.guestWarning}>
+            <Text style={styles.guestWarningText}>
+              Prijavite se kao član da biste mogli glasati
+            </Text>
           </View>
         )}
       </View>
-
-      {poll.description ? (
-        <Text style={styles.pollDescription}>{poll.description}</Text>
-      ) : null}
-
-      <View style={styles.optionsContainer}>
-        {poll.options.map(option => renderPollOption(poll, option))}
-      </View>
-
-      <View style={styles.pollFooter}>
-        <View style={styles.pollStats}>
-          <BarChart3 size={16} color="#6B7280" />
-          <Text style={styles.pollStatsText}>
-            Ukupno glasova: {poll.total_votes}
-          </Text>
-        </View>
-        {poll.ends_at && (
-          <Text style={styles.pollEndsAt}>
-            Završava: {new Date(poll.ends_at).toLocaleDateString('bs-BA')}
-          </Text>
-        )}
-      </View>
-
-      {!member && (
-        <View style={styles.guestWarning}>
-          <Text style={styles.guestWarningText}>
-            Prijavite se kao član da biste mogli glasati
-          </Text>
-        </View>
+      {(index + 1) % 2 === 0 && index < polls.length - 1 && (
+        <AdInFeed style={styles.adSpacing} />
       )}
-    </View>
+    </>
   );
 
   const renderEmpty = () => (
@@ -200,7 +207,17 @@ export default function VotingScreen() {
             colors={['#DC2626']}
           />
         }>
-        {polls.length === 0 ? renderEmpty() : polls.map(renderPoll)}
+        {polls.length === 0 ? (
+          renderEmpty()
+        ) : (
+          <>
+            <AdBanner size="medium" style={styles.topBanner} />
+            {polls.map((poll, index) => renderPoll(poll, index))}
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Created by Reka</Text>
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -393,5 +410,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#92400E',
     textAlign: 'center',
+  },
+  topBanner: {
+    marginBottom: 8,
+  },
+  adSpacing: {
+    marginBottom: 0,
+  },
+  footer: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
   },
 });
