@@ -126,7 +126,7 @@ export default function AdminPollsScreen() {
           style={styles.actionButton}
           onPress={() => handleToggleActive(poll.id, poll.is_active)}>
           {poll.is_active ? (
-            <ToggleRight size={20} color="#DC2626" />
+            <ToggleRight size={20} color="#D4AF37" />
           ) : (
             <ToggleLeft size={20} color="#6B7280" />
           )}
@@ -147,7 +147,7 @@ export default function AdminPollsScreen() {
         <TouchableOpacity
           style={[styles.actionButton, styles.actionButtonDanger]}
           onPress={() => handleDeletePoll(poll.id, poll.title)}>
-          <Trash2 size={20} color="#DC2626" />
+          <Trash2 size={20} color="#D4AF37" />
           <Text style={[styles.actionButtonText, styles.actionButtonTextDanger]}>
             Obriši
           </Text>
@@ -160,7 +160,7 @@ export default function AdminPollsScreen() {
     return (
       <View style={styles.centerContainer}>
         <StatusBar style="dark" />
-        <ActivityIndicator size="large" color="#DC2626" />
+        <ActivityIndicator size="large" color="#D4AF37" />
       </View>
     );
   }
@@ -183,8 +183,8 @@ export default function AdminPollsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#DC2626"
-            colors={['#DC2626']}
+            tintColor="#D4AF37"
+            colors={['#D4AF37']}
           />
         }>
         {polls.length === 0 ? (
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#1A1A1A',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 16,
     paddingHorizontal: 16,
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#D4AF37',
     flex: 1,
     textAlign: 'center',
   },
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#D1FAE5',
   },
   statusInactive: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#2A2A2A',
   },
   statusText: {
     fontSize: 12,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     color: '#059669',
   },
   statusTextInactive: {
-    color: '#DC2626',
+    color: '#D4AF37',
   },
   pollDescription: {
     fontSize: 14,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
   actionButtonTextDanger: {
-    color: '#DC2626',
+    color: '#D4AF37',
   },
   fab: {
     position: 'absolute',
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
