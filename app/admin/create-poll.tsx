@@ -174,7 +174,7 @@ export default function CreatePollScreen() {
                 style={styles.addOptionButton}
                 onPress={handleAddOption}
                 disabled={loading}>
-                <Plus size={20} color="#D4AF37" />
+                <Plus size={20} color="#DC2626" />
                 <Text style={styles.addOptionText}>Dodaj opciju</Text>
               </TouchableOpacity>
             </View>
@@ -194,7 +194,7 @@ export default function CreatePollScreen() {
                     style={styles.removeOptionButton}
                     onPress={() => handleRemoveOption(index)}
                     disabled={loading}>
-                    <X size={20} color="#D4AF37" />
+                    <X size={20} color="#DC2626" />
                   </TouchableOpacity>
                 )}
               </View>
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#DC2626',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 16,
     paddingHorizontal: 16,
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#D4AF37',
+    color: '#FFFFFF',
     flex: 1,
     textAlign: 'center',
   },
@@ -291,8 +291,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pollTypeButtonActive: {
-    borderColor: '#D4AF37',
-    backgroundColor: '#2A2A2A',
+    borderColor: '#DC2626',
+    backgroundColor: '#FEF2F2',
   },
   pollTypeText: {
     fontSize: 14,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   pollTypeTextActive: {
-    color: '#D4AF37',
+    color: '#DC2626',
   },
   optionsHeader: {
     flexDirection: 'row',
@@ -315,15 +315,15 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#FEF2F2',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#D4AF37',
+    borderColor: '#FEE2E2',
   },
   addOptionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#D4AF37',
+    color: '#DC2626',
   },
   optionInputContainer: {
     flexDirection: 'row',
@@ -339,26 +339,26 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#FEF2F2',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#D4AF37',
+    borderColor: '#FEE2E2',
   },
   errorText: {
-    color: '#D4AF37',
+    color: '#DC2626',
     fontSize: 14,
     marginBottom: 16,
     textAlign: 'center',
   },
   createButton: {
-    backgroundColor: '#D4AF37',
+    backgroundColor: '#DC2626',
     height: 52,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   createButtonText: {
-    color: '#1A1A1A',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
