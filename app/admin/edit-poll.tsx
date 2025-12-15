@@ -129,7 +129,7 @@ export default function EditPollScreen() {
     return (
       <View style={styles.centerContainer}>
         <StatusBar style="dark" />
-        <ActivityIndicator size="large" color="#DC2626" />
+        <ActivityIndicator size="large" color="#D4AF37" />
       </View>
     );
   }
@@ -240,7 +240,7 @@ export default function EditPollScreen() {
                 style={styles.addOptionButton}
                 onPress={handleAddOption}
                 disabled={saving}>
-                <Plus size={20} color="#DC2626" />
+                <Plus size={20} color="#D4AF37" />
                 <Text style={styles.addOptionText}>Dodaj opciju</Text>
               </TouchableOpacity>
             </View>
@@ -275,7 +275,7 @@ export default function EditPollScreen() {
           onPress={handleUpdatePoll}
           disabled={saving}>
           {saving ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color="#000000" />
           ) : (
             <Text style={styles.updateButtonText}>Ažuriraj anketu</Text>
           )}
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#000000',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 16,
     paddingHorizontal: 16,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#D4AF37',
     flex: 1,
     textAlign: 'center',
   },
@@ -363,8 +363,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pollTypeButtonActive: {
-    borderColor: '#DC2626',
-    backgroundColor: '#FEF2F2',
+    borderColor: '#D4AF37',
+    backgroundColor: '#FFF9E6',
   },
   pollTypeText: {
     fontSize: 14,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   pollTypeTextActive: {
-    color: '#DC2626',
+    color: '#D4AF37',
   },
   optionsHeader: {
     flexDirection: 'row',
@@ -387,15 +387,15 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#FFF9E6',
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: '#D4AF37',
   },
   addOptionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#DC2626',
+    color: '#D4AF37',
   },
   optionInputContainer: {
     flexDirection: 'row',
@@ -423,14 +423,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   updateButton: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
     height: 52,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   updateButtonText: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
