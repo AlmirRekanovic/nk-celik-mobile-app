@@ -7,13 +7,16 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "updates": {
+      "enabled": false
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.nkcelik.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#DC2626"
+        "backgroundColor": "#000000"
       },
       "package": "com.nkcelik.app"
     },
