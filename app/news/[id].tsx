@@ -18,6 +18,7 @@ import { NewsItem } from '@/types/news';
 import { fetchPostById } from '@/services/wordpress';
 import { useNews } from '@/contexts/NewsContext';
 import OptimizedImage from '@/components/OptimizedImage';
+import AdBanner from '@/components/AdBanner';
 
 export default function NewsDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -142,6 +143,8 @@ export default function NewsDetailScreen() {
               </Text>
             )}
           </View>
+
+          <AdBanner size="medium" style={styles.adBanner} />
 
           <RenderHtml
             contentWidth={width - 32}
@@ -292,6 +295,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
     fontStyle: 'italic',
+  },
+  adBanner: {
+    marginVertical: 16,
   },
   errorText: {
     fontSize: 16,

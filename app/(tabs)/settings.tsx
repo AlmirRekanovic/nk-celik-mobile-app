@@ -15,6 +15,7 @@ import { AppSettings } from '@/types/news';
 import { getSettings, setSettings, getLastSyncTime } from '@/services/storage';
 import { DEFAULT_PAGE_SIZE } from '@/constants/config';
 import { LogOut, UserCog, LogIn } from 'lucide-react-native';
+import AdBanner from '@/components/AdBanner';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -191,6 +192,15 @@ export default function SettingsScreen() {
             <Text style={styles.infoLabel}>Verzija:</Text>
             <Text style={styles.infoValue}>1.0.0</Text>
           </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Developer:</Text>
+            <Text style={styles.infoValue}>Reka</Text>
+          </View>
+        </View>
+
+        <View style={styles.adContainer}>
+          <AdBanner size="large" />
         </View>
 
         <View style={styles.footer}>
@@ -198,6 +208,7 @@ export default function SettingsScreen() {
           <Text style={styles.footerSubtext}>
             Aplikacija za praćenje vijesti Nogometnog kluba Čelik Zenica
           </Text>
+          <Text style={styles.footerCredit}>Created by Reka</Text>
         </View>
       </ScrollView>
     </View>
@@ -376,6 +387,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  adContainer: {
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E5E7EB',
+  },
   footer: {
     padding: 32,
     alignItems: 'center',
@@ -391,5 +410,11 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 8,
+  },
+  footerCredit: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
   },
 });

@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,11 @@ import { StatusBar } from 'expo-status-bar';
 import { NewsItem } from '@/types/news';
 import { useNews } from '@/contexts/NewsContext';
 import OptimizedImage from '@/components/OptimizedImage';
+import AdInFeed from '@/components/AdInFeed';
+
+type FeedItem =
+  | { type: 'news'; data: NewsItem }
+  | { type: 'ad'; id: string };
 
 const NewsItemCard = memo(({ item, onPress }: { item: NewsItem; onPress: () => void }) => {
   const formatDate = (dateString: string) => {
@@ -57,6 +62,17 @@ export default function NewsListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  const feedItems = useMemo<FeedItem[]>(() => {
+    const items: FeedItem[] = [];
+    posts.forEach((post, index) => {
+      items.push({ type: 'news', data: post });
+      if ((index + 1) % 6 === 0) {
+        items.push({ type: 'ad', id: `ad-${index}` });
+      }
+    });
+    return items;
+  }, [posts]);
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refreshPosts();
@@ -70,9 +86,12 @@ export default function NewsListScreen() {
     setLoadingMore(false);
   }, [hasMore, loadingMore, loadMorePosts]);
 
-  const renderNewsItem = useCallback(({ item }: { item: NewsItem }) => (
-    <NewsItemCard item={item} onPress={() => router.push(`/news/${item.id}`)} />
-  ), [router]);
+  const renderFeedItem = useCallback(({ item }: { item: FeedItem }) => {
+    if (item.type === 'ad') {
+      return <AdInFeed />;
+    }
+    return <NewsItemCard item={item.data} onPress={() => router.push(`/news/${item.data.id}`)} />;
+  }, [router]);
 
   const renderHeader = useCallback(() => (
     <View style={styles.header}>
@@ -112,9 +131,9 @@ export default function NewsListScreen() {
       <StatusBar style="dark" />
       {renderHeader()}
       <FlatList
-        data={posts}
-        renderItem={renderNewsItem}
-        keyExtractor={(item) => item.id.toString()}
+        data={feedItems}
+        renderItem={renderFeedItem}
+        keyExtractor={(item) => item.type === 'news' ? item.data.id.toString() : item.id}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -127,7 +146,7 @@ export default function NewsListScreen() {
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
-        contentContainerStyle={posts.length === 0 ? styles.emptyList : styles.listContent}
+        contentContainerStyle={feedItems.length === 0 ? styles.emptyList : styles.listContent}
         removeClippedSubviews={true}
         maxToRenderPerBatch={10}
         updateCellsBatchingPeriod={50}
@@ -136,6 +155,7 @@ export default function NewsListScreen() {
       />
       <View style={styles.footer}>
         <Text style={styles.footerText}>Podaci preuzeti sa nkcelik.ba</Text>
+        <Text style={styles.footerCredit}>Created by Reka</Text>
       </View>
     </View>
   );
@@ -262,9 +282,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
+    gap: 4,
   },
   footerText: {
     fontSize: 12,
     color: '#6B7280',
+  },
+  footerCredit: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
   },
 });
