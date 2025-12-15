@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Newspaper, Settings, Vote, ShoppingBag, ScanLine, Ticket } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import { Platform } from 'react-native';
 
 export default function TabLayout() {
   const { member } = useAuth();
@@ -16,6 +17,15 @@ export default function TabLayout() {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E7EB',
+          paddingBottom: Platform.OS === 'ios' ? 20 : 5,
+          height: Platform.OS === 'ios' ? 85 : 65,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          marginTop: -2,
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
         },
       }}>
       <Tabs.Screen
@@ -23,7 +33,7 @@ export default function TabLayout() {
         options={{
           title: 'Novosti',
           tabBarIcon: ({ size, color }) => (
-            <Newspaper size={size} color={color} />
+            <Newspaper size={20} color={color} />
           ),
         }}
       />
@@ -32,7 +42,7 @@ export default function TabLayout() {
         options={{
           title: 'Glasanje',
           tabBarIcon: ({ size, color }) => (
-            <Vote size={size} color={color} />
+            <Vote size={20} color={color} />
           ),
         }}
       />
@@ -41,25 +51,25 @@ export default function TabLayout() {
         options={{
           title: 'Karte',
           tabBarIcon: ({ size, color }) => (
-            <Ticket size={size} color={color} />
+            <Ticket size={20} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="shop"
         options={{
-          title: 'Prodavnica',
+          title: 'Shop',
           tabBarIcon: ({ size, color }) => (
-            <ShoppingBag size={size} color={color} />
+            <ShoppingBag size={20} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="checkin"
         options={{
-          title: 'Check-in',
+          title: 'Skeniraj',
           tabBarIcon: ({ size, color }) => (
-            <ScanLine size={size} color={color} />
+            <ScanLine size={20} color={color} />
           ),
           href: isAdmin ? undefined : null,
         }}
@@ -69,7 +79,7 @@ export default function TabLayout() {
         options={{
           title: 'Postavke',
           tabBarIcon: ({ size, color }) => (
-            <Settings size={size} color={color} />
+            <Settings size={20} color={color} />
           ),
         }}
       />
