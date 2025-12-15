@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   ActivityIndicator,
   TouchableOpacity,
   Platform,
@@ -17,15 +16,21 @@ import { useWindowDimensions } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { NewsItem } from '@/types/news';
 import { fetchPostById } from '@/services/wordpress';
-import { getCachedPosts } from '@/services/storage';
+import { useNews } from '@/contexts/NewsContext';
+import OptimizedImage from '@/components/OptimizedImage';
 
 export default function NewsDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { posts } = useNews();
   const [post, setPost] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const cachedPost = useMemo(() => {
+    return posts.find(p => p.id === parseInt(id as string));
+  }, [posts, id]);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -36,23 +41,21 @@ export default function NewsDetailScreen() {
           return;
         }
 
-        const cachedPosts = await getCachedPosts();
-        const cachedPost = cachedPosts.find(p => p.id === parseInt(id));
-
         if (cachedPost) {
           setPost(cachedPost);
+          setLoading(false);
         }
 
         try {
           const fetchedPost = await fetchPostById(parseInt(id));
           setPost(fetchedPost);
+          setLoading(false);
         } catch (fetchError) {
           if (!cachedPost) {
             throw fetchError;
           }
+          setLoading(false);
         }
-
-        setLoading(false);
       } catch (err) {
         console.error('Error loading post:', err);
         setError(true);
@@ -61,7 +64,7 @@ export default function NewsDetailScreen() {
     };
 
     loadPost();
-  }, [id]);
+  }, [id, cachedPost]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -116,8 +119,8 @@ export default function NewsDetailScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {post.featuredImageUrl && (
-          <Image
-            source={{ uri: post.featuredImageUrl }}
+          <OptimizedImage
+            uri={post.featuredImageUrl}
             style={styles.featuredImage}
             resizeMode="cover"
           />

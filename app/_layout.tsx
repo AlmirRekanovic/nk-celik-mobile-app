@@ -3,17 +3,24 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { registerBackgroundFetch } from '@/services/backgroundFetch';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { NewsProvider, useNews } from '@/contexts/NewsContext';
+import LoadingScreen from '@/components/LoadingScreen';
 
-export default function RootLayout() {
-  useFrameworkReady();
+function AppContent() {
+  const { loading: authLoading } = useAuth();
+  const { initialized: newsInitialized } = useNews();
 
   useEffect(() => {
     registerBackgroundFetch();
   }, []);
 
+  if (authLoading || !newsInitialized) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <AuthProvider>
+    <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -23,6 +30,18 @@ export default function RootLayout() {
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
+    </>
+  );
+}
+
+export default function RootLayout() {
+  useFrameworkReady();
+
+  return (
+    <AuthProvider>
+      <NewsProvider>
+        <AppContent />
+      </NewsProvider>
     </AuthProvider>
   );
 }

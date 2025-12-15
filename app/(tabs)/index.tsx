@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  Image,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
@@ -13,83 +12,10 @@ import {
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { NewsItem } from '@/types/news';
-import { fetchPosts } from '@/services/wordpress';
-import { getCachedPosts, setCachedPosts, mergePosts, setLastSyncTime, getSettings } from '@/services/storage';
-import { RefreshCw } from 'lucide-react-native';
+import { useNews } from '@/contexts/NewsContext';
+import OptimizedImage from '@/components/OptimizedImage';
 
-export default function NewsListScreen() {
-  const router = useRouter();
-  const [posts, setPosts] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isOffline, setIsOffline] = useState(false);
-  const [hasNewPosts, setHasNewPosts] = useState(false);
-
-  const loadCachedPosts = async () => {
-    const cached = await getCachedPosts();
-    if (cached.length > 0) {
-      setPosts(cached);
-    }
-  };
-
-  const loadPosts = async (page: number = 1, append: boolean = false) => {
-    try {
-      const settings = await getSettings();
-      const newPosts = await fetchPosts(page, settings.postsPerPage);
-
-      if (newPosts.length === 0) {
-        setHasMore(false);
-        return;
-      }
-
-      if (append) {
-        setPosts(prev => [...prev, ...newPosts]);
-      } else {
-        const merged = await mergePosts(posts, newPosts);
-        setPosts(merged);
-        await setCachedPosts(merged);
-      }
-
-      await setLastSyncTime(new Date().toISOString());
-      setIsOffline(false);
-      setHasNewPosts(false);
-    } catch (error) {
-      console.error('Error loading posts:', error);
-      setIsOffline(true);
-    }
-  };
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    setCurrentPage(1);
-    setHasMore(true);
-    await loadPosts(1, false);
-    setRefreshing(false);
-  }, [posts]);
-
-  const onLoadMore = async () => {
-    if (!hasMore || loadingMore) return;
-
-    setLoadingMore(true);
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
-    await loadPosts(nextPage, true);
-    setLoadingMore(false);
-  };
-
-  useEffect(() => {
-    const initialize = async () => {
-      await loadCachedPosts();
-      await loadPosts(1, false);
-      setLoading(false);
-    };
-
-    initialize();
-  }, []);
-
+const NewsItemCard = memo(({ item, onPress }: { item: NewsItem; onPress: () => void }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('bs-BA', {
@@ -103,13 +29,11 @@ export default function NewsListScreen() {
     return html.replace(/<[^>]*>/g, '').trim().substring(0, 150) + '...';
   };
 
-  const renderNewsItem = ({ item }: { item: NewsItem }) => (
-    <TouchableOpacity
-      style={styles.newsCard}
-      onPress={() => router.push(`/news/${item.id}`)}>
+  return (
+    <TouchableOpacity style={styles.newsCard} onPress={onPress}>
       {item.featuredImageUrl && (
-        <Image
-          source={{ uri: item.featuredImageUrl }}
+        <OptimizedImage
+          uri={item.featuredImageUrl}
           style={styles.newsImage}
           resizeMode="cover"
         />
@@ -125,53 +49,63 @@ export default function NewsListScreen() {
       </View>
     </TouchableOpacity>
   );
+});
 
-  const renderHeader = () => (
+export default function NewsListScreen() {
+  const router = useRouter();
+  const { posts, loading, error, refreshPosts, loadMorePosts, hasMore } = useNews();
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshPosts();
+    setRefreshing(false);
+  }, [refreshPosts]);
+
+  const onLoadMore = useCallback(async () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    await loadMorePosts();
+    setLoadingMore(false);
+  }, [hasMore, loadingMore, loadMorePosts]);
+
+  const renderNewsItem = useCallback(({ item }: { item: NewsItem }) => (
+    <NewsItemCard item={item} onPress={() => router.push(`/news/${item.id}`)} />
+  ), [router]);
+
+  const renderHeader = useCallback(() => (
     <View style={styles.header}>
       <View style={styles.headerContent}>
         <Text style={styles.headerTitle}>NK Čelik Novosti</Text>
-        {isOffline && (
+        {error && (
           <View style={styles.offlineBadge}>
             <Text style={styles.offlineText}>Offline</Text>
           </View>
         )}
       </View>
-      {hasNewPosts && (
-        <TouchableOpacity style={styles.newPostsBanner} onPress={onRefresh}>
-          <RefreshCw size={16} color="#DC2626" />
-          <Text style={styles.newPostsText}>Pojavile su se nove vijesti – osvježi</Text>
-        </TouchableOpacity>
-      )}
     </View>
-  );
+  ), [error]);
 
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!loadingMore) return null;
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color="#DC2626" />
       </View>
     );
-  };
+  }, [loadingMore]);
 
-  const renderEmpty = () => {
-    if (loading) {
-      return (
-        <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color="#DC2626" />
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Nema vijesti za prikaz</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-          <Text style={styles.retryButtonText}>Pokušaj ponovo</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
+  const renderEmpty = useCallback(() => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>
+        {error ? 'Greška pri učitavanju vijesti' : 'Nema vijesti za prikaz'}
+      </Text>
+      <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+        <Text style={styles.retryButtonText}>Pokušaj ponovo</Text>
+      </TouchableOpacity>
+    </View>
+  ), [error, onRefresh]);
 
   return (
     <View style={styles.container}>
@@ -194,6 +128,11 @@ export default function NewsListScreen() {
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={posts.length === 0 ? styles.emptyList : styles.listContent}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={10}
+        windowSize={10}
       />
       <View style={styles.footer}>
         <Text style={styles.footerText}>Podaci preuzeti sa nkcelik.ba</Text>
