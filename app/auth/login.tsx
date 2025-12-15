@@ -220,7 +220,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#DC2626',
+    backgroundColor: '#000000',
   },
   scrollContent: {
     flexGrow: 1,
@@ -233,12 +233,12 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#D4AF37',
     marginBottom: 8,
   },
   appSubtitle: {
     fontSize: 16,
-    color: '#FEE2E2',
+    color: '#D4AF37',
     letterSpacing: 2,
   },
   formContainer: {
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loginButton: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
     height: 52,
     borderRadius: 12,
     justifyContent: 'center',
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   loginButtonText: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   modeButtonActive: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
   },
   modeButtonText: {
     fontSize: 14,
@@ -365,6 +365,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   modeButtonTextActive: {
-    color: '#FFFFFF',
+    color: '#000000',
   },
 });

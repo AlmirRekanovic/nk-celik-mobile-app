@@ -110,7 +110,7 @@ export default function NewsListScreen() {
     if (!loadingMore) return null;
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#DC2626" />
+        <ActivityIndicator size="small" color="#D4AF37" />
       </View>
     );
   }, [loadingMore]);
@@ -138,8 +138,8 @@ export default function NewsListScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#DC2626"
-            colors={['#DC2626']}
+            tintColor="#D4AF37"
+            colors={['#D4AF37']}
           />
         }
         onEndReached={onLoadMore}
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#000000',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 16,
     paddingHorizontal: 16,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#D4AF37',
   },
   offlineBadge: {
     backgroundColor: '#1F2937',
@@ -262,13 +262,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   retryButton: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 14,
     fontWeight: '600',
   },

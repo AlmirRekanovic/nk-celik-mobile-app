@@ -74,7 +74,7 @@ export default function CheckInScreen() {
           )}
         </View>
         <View style={styles.permissionContainer}>
-          <Camera size={64} color="#DC2626" />
+          <Camera size={64} color="#D4AF37" />
           <Text style={styles.permissionTitle}>Dozvola za kameru</Text>
           <Text style={styles.permissionText}>
             Potrebna je dozvola za kameru kako biste mogli skenirati QR kodove.
@@ -141,7 +141,7 @@ export default function CheckInScreen() {
 
       {!scanning ? (
         <View style={styles.startContainer}>
-          <Camera size={80} color="#DC2626" />
+          <Camera size={80} color="#D4AF37" />
           <Text style={styles.startTitle}>Spremno za skeniranje</Text>
           <Text style={styles.startText}>
             Pritisnite dugme ispod da započnete skeniranje QR kodova na kartama.
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#000000',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 16,
     paddingHorizontal: 16,
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#D4AF37',
   },
   headerSubtitle: {
     fontSize: 14,
@@ -289,13 +289,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   permissionButton: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 8,
   },
   permissionButtonText: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   scanButton: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   scanButtonText: {
-    color: '#FFFFFF',
+    color: '#000000',
     fontSize: 18,
     fontWeight: '600',
   },

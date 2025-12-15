@@ -88,9 +88,9 @@ export default function VotingScreen() {
         <View style={styles.optionContent}>
           <View style={styles.optionLeft}>
             {isSelected ? (
-              <CheckCircle2 size={24} color="#DC2626" />
+              <CheckCircle2 size={24} color="#D4AF37" />
             ) : (
-              <Circle size={24} color={hasVoted ? '#9CA3AF' : '#DC2626'} />
+              <Circle size={24} color={hasVoted ? '#9CA3AF' : '#D4AF37'} />
             )}
             <Text style={[styles.optionText, hasVoted && styles.optionTextDisabled]}>
               {option}
@@ -176,7 +176,7 @@ export default function VotingScreen() {
     return (
       <View style={styles.centerContainer}>
         <StatusBar style="dark" />
-        <ActivityIndicator size="large" color="#DC2626" />
+        <ActivityIndicator size="large" color="#D4AF37" />
       </View>
     );
   }
@@ -203,8 +203,8 @@ export default function VotingScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#DC2626"
-            colors={['#DC2626']}
+            tintColor="#D4AF37"
+            colors={['#D4AF37']}
           />
         }>
         {polls.length === 0 ? (
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#000000',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 16,
     paddingHorizontal: 16,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#D4AF37',
   },
   headerSubtitle: {
     fontSize: 14,
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     borderWidth: 2,
-    borderColor: '#DC2626',
+    borderColor: '#D4AF37',
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
@@ -337,8 +337,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   optionButtonSelected: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#DC2626',
+    backgroundColor: '#FFF9E6',
+    borderColor: '#D4AF37',
   },
   optionContent: {
     flexDirection: 'row',
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
   },
   pollFooter: {
     flexDirection: 'row',

@@ -106,7 +106,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={styles.adminButton}
                 onPress={() => router.push('/admin/polls')}>
-                <UserCog size={20} color="#DC2626" />
+                <UserCog size={20} color="#D4AF37" />
                 <Text style={styles.adminButtonText}>Upravljanje anketama</Text>
               </TouchableOpacity>
             )}
@@ -153,8 +153,8 @@ export default function SettingsScreen() {
             <Switch
               value={settings.backgroundRefreshEnabled}
               onValueChange={handleToggleBackgroundRefresh}
-              trackColor={{ false: '#D1D5DB', true: '#FCA5A5' }}
-              thumbColor={settings.backgroundRefreshEnabled ? '#DC2626' : '#F3F4F6'}
+              trackColor={{ false: '#D1D5DB', true: '#FFE8A1' }}
+              thumbColor={settings.backgroundRefreshEnabled ? '#D4AF37' : '#F3F4F6'}
             />
           </View>
 
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   header: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#000000',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 16,
     paddingHorizontal: 16,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#D4AF37',
   },
   content: {
     flex: 1,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#DC2626',
+    borderColor: '#D4AF37',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
   },
   radioLabel: {
     fontSize: 16,
@@ -304,17 +304,17 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#FFF9E6',
     borderRadius: 8,
     marginHorizontal: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: '#D4AF37',
   },
   adminButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#DC2626',
+    color: '#D4AF37',
   },
   logoutButton: {
     flexDirection: 'row',
@@ -359,14 +359,14 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
     borderRadius: 8,
     marginHorizontal: 16,
   },
   loginButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#000000',
   },
   adContainer: {
     padding: 16,
