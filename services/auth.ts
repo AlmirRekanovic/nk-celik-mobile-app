@@ -71,6 +71,39 @@ export async function loginMemberByEmail(email: string): Promise<Member | null> 
   }
 }
 
+export async function loginWithEmailAndPassword(email: string, password: string): Promise<Member | null> {
+  try {
+    const { data, error } = await supabase
+      .from('members')
+      .select('*')
+      .eq('email', email)
+      .eq('member_id', password)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Login error:', error);
+      return null;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    await supabase
+      .from('members')
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('id', data.id);
+
+    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
+    await AsyncStorage.removeItem(GUEST_MODE_KEY);
+
+    return data;
+  } catch (error) {
+    console.error('Login with email and password error:', error);
+    return null;
+  }
+}
+
 export async function setGuestMode(): Promise<void> {
   await AsyncStorage.setItem(GUEST_MODE_KEY, 'true');
   await AsyncStorage.removeItem(AUTH_STORAGE_KEY);

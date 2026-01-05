@@ -13,59 +13,34 @@ import {
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Key, Mail } from 'lucide-react-native';
-
-type LoginMode = 'member' | 'email';
+import { Mail, Lock } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, loginWithEmail, continueAsGuest } = useAuth();
-  const [mode, setMode] = useState<LoginMode>('email');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [memberId, setMemberId] = useState('');
+  const { loginWithPassword, continueAsGuest } = useAuth();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    if (mode === 'email') {
-      if (!email.trim()) {
-        setError('Molimo unesite email adresu');
-        return;
-      }
-
-      setLoading(true);
-      setError('');
-
-      const success = await loginWithEmail(email.trim().toLowerCase());
-
-      if (success) {
-        router.replace('/(tabs)');
-      } else {
-        setError('Email adresa nije pronađena.');
-      }
-
-      setLoading(false);
-    } else {
-      if (!firstName.trim() || !lastName.trim() || !memberId.trim()) {
-        setError('Molimo popunite sva polja');
-        return;
-      }
-
-      setLoading(true);
-      setError('');
-
-      const success = await login(firstName.trim(), lastName.trim(), memberId.trim());
-
-      if (success) {
-        router.replace('/(tabs)');
-      } else {
-        setError('Pogrešni podaci. Provjerite ime, prezime i članski broj.');
-      }
-
-      setLoading(false);
+    if (!email.trim() || !password.trim()) {
+      setError('Molimo unesite email i lozinku');
+      return;
     }
+
+    setLoading(true);
+    setError('');
+
+    const success = await loginWithPassword(email.trim().toLowerCase(), password.trim());
+
+    if (success) {
+      router.replace('/(tabs)');
+    } else {
+      setError('Pogrešan email ili lozinka.');
+    }
+
+    setLoading(false);
   };
 
   const handleGuestMode = async () => {
@@ -89,96 +64,37 @@ export default function LoginScreen() {
         <View style={styles.formContainer}>
           <Text style={styles.title}>Prijava člana</Text>
           <Text style={styles.subtitle}>
-            Prijavite se sa Vašim podacima ili nastavite kao gost
+            Prijavite se sa Vašim email-om i članskim brojem
           </Text>
 
-          <View style={styles.modeSelector}>
-            <TouchableOpacity
-              style={[styles.modeButton, mode === 'email' && styles.modeButtonActive]}
-              onPress={() => setMode('email')}
-              disabled={loading}>
-              <Mail size={18} color={mode === 'email' ? '#FFFFFF' : '#6B7280'} />
-              <Text
-                style={[
-                  styles.modeButtonText,
-                  mode === 'email' && styles.modeButtonTextActive,
-                ]}>
-                Email
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modeButton, mode === 'member' && styles.modeButtonActive]}
-              onPress={() => setMode('member')}
-              disabled={loading}>
-              <User size={18} color={mode === 'member' ? '#FFFFFF' : '#6B7280'} />
-              <Text
-                style={[
-                  styles.modeButtonText,
-                  mode === 'member' && styles.modeButtonTextActive,
-                ]}>
-                Članski broj
-              </Text>
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.inputGroup}>
-            {mode === 'email' ? (
-              <View style={styles.inputWrapper}>
-                <Mail size={20} color="#6B7280" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email adresa"
-                  placeholderTextColor="#9CA3AF"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!loading}
-                />
-              </View>
-            ) : (
-              <>
-                <View style={styles.inputWrapper}>
-                  <User size={20} color="#6B7280" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ime"
-                    placeholderTextColor="#9CA3AF"
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    autoCapitalize="words"
-                    editable={!loading}
-                  />
-                </View>
+            <View style={styles.inputWrapper}>
+              <Mail size={20} color="#6B7280" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email adresa"
+                placeholderTextColor="#9CA3AF"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!loading}
+              />
+            </View>
 
-                <View style={styles.inputWrapper}>
-                  <User size={20} color="#6B7280" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Prezime"
-                    placeholderTextColor="#9CA3AF"
-                    value={lastName}
-                    onChangeText={setLastName}
-                    autoCapitalize="words"
-                    editable={!loading}
-                  />
-                </View>
-
-                <View style={styles.inputWrapper}>
-                  <Key size={20} color="#6B7280" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Članski broj"
-                    placeholderTextColor="#9CA3AF"
-                    value={memberId}
-                    onChangeText={setMemberId}
-                    secureTextEntry
-                    editable={!loading}
-                  />
-                </View>
-              </>
-            )}
+            <View style={styles.inputWrapper}>
+              <Lock size={20} color="#6B7280" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Lozinka (članski broj)"
+                placeholderTextColor="#9CA3AF"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                editable={!loading}
+              />
+            </View>
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -339,32 +255,5 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'center',
     lineHeight: 18,
-  },
-  modeSelector: {
-    flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 24,
-  },
-  modeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  modeButtonActive: {
-    backgroundColor: '#D4AF37',
-  },
-  modeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  modeButtonTextActive: {
-    color: '#000000',
   },
 });

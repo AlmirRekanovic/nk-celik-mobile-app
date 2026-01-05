@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Member, AuthState } from '@/types/auth';
-import { getStoredMember, isGuestMode, loginMember, loginMemberByEmail, setGuestMode, logout } from '@/services/auth';
+import { getStoredMember, isGuestMode, loginMember, loginMemberByEmail, loginWithEmailAndPassword, setGuestMode, logout } from '@/services/auth';
 
 interface AuthContextType extends AuthState {
   login: (firstName: string, lastName: string, memberId: string) => Promise<boolean>;
   loginWithEmail: (email: string) => Promise<boolean>;
+  loginWithPassword: (email: string, password: string) => Promise<boolean>;
   continueAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
@@ -63,6 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
+  const loginWithPassword = async (email: string, password: string): Promise<boolean> => {
+    const loggedInMember = await loginWithEmailAndPassword(email, password);
+
+    if (loggedInMember) {
+      setMember(loggedInMember);
+      setIsGuest(false);
+      return true;
+    }
+
+    return false;
+  };
+
   const continueAsGuest = async () => {
     await setGuestMode();
     setIsGuest(true);
@@ -83,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!member || isGuest,
         login,
         loginWithEmail,
+        loginWithPassword,
         continueAsGuest,
         signOut,
         loading,
