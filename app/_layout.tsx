@@ -22,6 +22,7 @@ function AppContent() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="news/[id]" options={{ headerShown: false }} />
