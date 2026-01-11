@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import RenderHtml from 'react-native-render-html';
 import { useWindowDimensions } from 'react-native';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft } from '@/components/Icons';
 import { NewsItem } from '@/types/news';
 import { fetchPostById } from '@/services/wordpress';
 import { useNews } from '@/contexts/NewsContext';

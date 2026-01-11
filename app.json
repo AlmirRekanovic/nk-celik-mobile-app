@@ -18,7 +18,8 @@
       "adaptiveIcon": {
         "backgroundColor": "#000000"
       },
-      "package": "com.nkcelik.app"
+      "package": "com.nkcelik.app",
+      "jsEngine": "hermes"
     },
     "web": {
       "bundler": "metro",

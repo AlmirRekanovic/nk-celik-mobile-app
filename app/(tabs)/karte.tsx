@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { fetchMemberTickets } from '@/services/tickets';
 import { Ticket } from '@/types/products';
-import { Ticket as TicketIcon, Calendar, Clock } from 'lucide-react-native';
+import { Ticket as TicketIcon, Calendar, Clock } from '@/components/Icons';
 import QRCode from 'react-native-qrcode-svg';
 
 export default function KarteScreen() {

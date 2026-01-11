@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkInTicket } from '@/services/tickets';
 import { Ticket } from '@/types/products';
-import { Camera, X, CheckCircle, XCircle, AlertCircle } from 'lucide-react-native';
+import { Camera, X, CheckCircle, XCircle, AlertCircle } from '@/components/Icons';
 
 type ScanResult = {
   type: 'success' | 'error' | 'warning';

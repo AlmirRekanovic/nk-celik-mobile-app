@@ -16,7 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
 import { PollWithVotes } from '@/types/auth';
 import { getAllPolls, updatePoll, deletePoll } from '@/services/polls';
-import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, ArrowLeft } from 'lucide-react-native';
+import { Plus, Edit3, Trash2, ToggleLeft, ToggleRight, ArrowLeft } from '@/components/Icons';
 
 export default function AdminPollsScreen() {
   const router = useRouter();

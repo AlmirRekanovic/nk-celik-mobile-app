@@ -15,7 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
 import { getPoll, updatePoll } from '@/services/polls';
 import { Poll } from '@/types/auth';
-import { ArrowLeft, Plus, X } from 'lucide-react-native';
+import { ArrowLeft, Plus, X } from '@/components/Icons';
 
 export default function EditPollScreen() {
   const router = useRouter();
