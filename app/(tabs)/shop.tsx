@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { fetchProducts } from '@/services/woocommerce';
 import { Product } from '@/types/products';
-import { ShoppingCart, ExternalLink } from 'lucide-react-native';
+import { ShoppingCart, ExternalLink } from '@/components/Icons';
 
 export default function ShopScreen() {
   const { member, isGuest } = useAuth();

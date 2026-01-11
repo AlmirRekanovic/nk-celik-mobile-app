@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Mail, Lock } from 'lucide-react-native';
+import { Mail, Lock } from '@/components/Icons';
 
 export default function LoginScreen() {
   const router = useRouter();

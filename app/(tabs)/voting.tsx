@@ -14,7 +14,7 @@ import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { PollWithVotes } from '@/types/auth';
 import { getActivePolls, castVote } from '@/services/polls';
-import { CheckCircle2, Circle, BarChart3 } from 'lucide-react-native';
+import { CheckCircle2, Circle, BarChart3 } from '@/components/Icons';
 import AdBanner from '@/components/AdBanner';
 import AdInFeed from '@/components/AdInFeed';
 

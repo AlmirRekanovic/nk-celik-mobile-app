@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Newspaper, Settings, Vote, ShoppingBag, ScanLine, Ticket } from 'lucide-react-native';
+import { Newspaper, Settings, Vote, ShoppingBag, ScanLine, Ticket } from '@/components/Icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { Platform } from 'react-native';
 
