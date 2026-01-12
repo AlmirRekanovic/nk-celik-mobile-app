@@ -23,9 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadAuthState = async () => {
+    console.log('[AuthContext] Loading auth state');
     try {
       const storedMember = await getStoredMember();
       const guestMode = await isGuestMode();
+
+      console.log('[AuthContext] Stored member:', !!storedMember, 'Guest mode:', guestMode);
 
       if (storedMember) {
         setMember(storedMember);
@@ -34,9 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsGuest(true);
       }
     } catch (error) {
-      console.error('Error loading auth state:', error);
+      console.error('[AuthContext] Error loading auth state:', error);
     } finally {
       setLoading(false);
+      console.log('[AuthContext] Auth state loaded, loading:', false);
     }
   };
 

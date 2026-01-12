@@ -33,17 +33,22 @@ export function NewsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const initializeNews = async () => {
+    console.log('[NewsContext] Starting initialization');
     try {
       setLoading(true);
       setError(null);
 
+      console.log('[NewsContext] Loading cached posts');
       const cached = await getCachedPosts();
+      console.log('[NewsContext] Cached posts loaded:', cached.length);
+
       if (cached.length > 0) {
         setPosts(cached);
         setInitialized(true);
         setLoading(false);
       }
 
+      console.log('[NewsContext] Fetching fresh posts');
       const timeoutPromise = new Promise<NewsItem[]>((_, reject) =>
         setTimeout(() => reject(new Error('Network timeout')), 10000)
       );
@@ -51,7 +56,12 @@ export function NewsProvider({ children }: { children: ReactNode }) {
       const freshPosts = await Promise.race([
         loadInitialPosts(),
         timeoutPromise
-      ]);
+      ]).catch(err => {
+        console.error('[NewsContext] Error fetching fresh posts:', err);
+        return [];
+      });
+
+      console.log('[NewsContext] Fresh posts loaded:', freshPosts.length);
 
       if (freshPosts.length > 0) {
         const merged = cached.length > 0 ? await mergePosts(cached, freshPosts) : freshPosts;
@@ -60,22 +70,29 @@ export function NewsProvider({ children }: { children: ReactNode }) {
         await setLastSyncTime(new Date().toISOString());
 
         preloadNewsImages(merged).catch(err =>
-          console.log('Image preload failed:', err)
+          console.log('[NewsContext] Image preload failed:', err)
         );
       }
 
       setInitialized(true);
+      console.log('[NewsContext] Initialization complete');
     } catch (err) {
-      console.error('Error initializing news:', err);
+      console.error('[NewsContext] Error initializing news:', err);
       setError('Failed to load news');
 
-      const cached = await getCachedPosts();
-      if (cached.length > 0) {
-        setPosts(cached);
+      try {
+        const cached = await getCachedPosts();
+        if (cached.length > 0) {
+          setPosts(cached);
+        }
+      } catch (cacheErr) {
+        console.error('[NewsContext] Error loading cached posts in fallback:', cacheErr);
       }
+
       setInitialized(true);
     } finally {
       setLoading(false);
+      console.log('[NewsContext] Loading complete, initialized:', true);
     }
   };
 

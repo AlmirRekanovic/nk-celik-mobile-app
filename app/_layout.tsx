@@ -13,17 +13,25 @@ function AppContent() {
   const [forceReady, setForceReady] = useState(false);
 
   useEffect(() => {
+    console.log('[AppContent] Auth loading:', authLoading, 'News initialized:', newsInitialized);
+  }, [authLoading, newsInitialized]);
+
+  useEffect(() => {
     registerBackgroundFetch();
 
     const timeout = setTimeout(() => {
-      console.warn('App initialization timeout - forcing ready state');
+      console.warn('[AppContent] App initialization timeout - forcing ready state');
       setForceReady(true);
     }, 15000);
 
     return () => clearTimeout(timeout);
   }, []);
 
-  if (!forceReady && (authLoading || !newsInitialized)) {
+  const isReady = forceReady || (!authLoading && newsInitialized);
+
+  console.log('[AppContent] Render - isReady:', isReady, 'authLoading:', authLoading, 'newsInitialized:', newsInitialized, 'forceReady:', forceReady);
+
+  if (!isReady) {
     return <LoadingScreen />;
   }
 
