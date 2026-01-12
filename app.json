@@ -10,8 +10,7 @@
     "updates": {
       "enabled": false,
       "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "NEVER",
-      "url": "https://u.expo.dev/dff972e8-b326-44b6-ab97-685527ce10da"
+      "checkAutomatically": "NEVER"
     },
     "ios": {
       "supportsTablet": true,
@@ -33,10 +32,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "dff972e8-b326-44b6-ab97-685527ce10da"
-      }
+      "router": {}
     }
   }
 }
