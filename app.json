@@ -10,7 +10,8 @@
     "updates": {
       "enabled": false,
       "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "NEVER"
+      "checkAutomatically": "NEVER",
+      "url": "https://u.expo.dev/dff972e8-b326-44b6-ab97-685527ce10da"
     },
     "ios": {
       "supportsTablet": true,
