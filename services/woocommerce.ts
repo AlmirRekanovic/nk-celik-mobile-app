@@ -41,7 +41,9 @@ export async function fetchProducts(page: number = 1, perPage: number = 20): Pro
     }
 
     const products: WCProduct[] = await response.json();
-    return products.map(transformWCProduct);
+    return products
+      .filter(product => product.catalog_visibility === 'visible')
+      .map(transformWCProduct);
   } catch (error) {
     console.error('Error fetching products:', error);
     throw error;

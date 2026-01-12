@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react';
 import { fetchProducts } from '@/services/woocommerce';
 import { Product } from '@/types/products';
 import { ShoppingCart, ExternalLink } from '@/components/Icons';
+import { getCachedProducts, setCachedProducts } from '@/services/storage';
 
 export default function ShopScreen() {
   const { member, isGuest } = useAuth();
@@ -24,11 +25,34 @@ export default function ShopScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadProducts = async () => {
+  const loadProducts = async (skipCache = false) => {
     try {
       setError(null);
-      const data = await fetchProducts();
-      setProducts(data);
+
+      if (!skipCache) {
+        const cached = await getCachedProducts();
+        if (cached.length > 0) {
+          setProducts(cached);
+          setLoading(false);
+        }
+      }
+
+      const timeoutPromise = new Promise<Product[]>((_, reject) =>
+        setTimeout(() => reject(new Error('Network timeout')), 15000)
+      );
+
+      const freshProducts = await Promise.race([
+        fetchProducts(),
+        timeoutPromise
+      ]).catch(err => {
+        console.error('Error fetching fresh products:', err);
+        return [];
+      });
+
+      if (freshProducts.length > 0) {
+        setProducts(freshProducts);
+        await setCachedProducts(freshProducts);
+      }
     } catch (err) {
       setError('Greška pri učitavanju proizvoda');
       console.error('Error loading products:', err);
@@ -44,7 +68,7 @@ export default function ShopScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadProducts();
+    loadProducts(true);
   };
 
   const openProduct = (url: string) => {

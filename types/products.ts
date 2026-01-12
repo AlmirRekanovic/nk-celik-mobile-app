@@ -8,6 +8,7 @@ export interface WCProduct {
   type: string;
   status: string;
   featured: boolean;
+  catalog_visibility: string;
   description: string;
   short_description: string;
   sku: string;

@@ -3,10 +3,12 @@ import {
   CACHE_KEY_POSTS,
   CACHE_KEY_LAST_SYNC,
   CACHE_KEY_SETTINGS,
+  CACHE_KEY_PRODUCTS,
   MAX_CACHED_POSTS,
   DEFAULT_PAGE_SIZE
 } from '@/constants/config';
 import { NewsItem, AppSettings } from '@/types/news';
+import { Product } from '@/types/products';
 
 export async function getCachedPosts(): Promise<NewsItem[]> {
   try {
@@ -89,5 +91,26 @@ export async function setSettings(settings: AppSettings): Promise<void> {
     await AsyncStorage.setItem(CACHE_KEY_SETTINGS, JSON.stringify(settings));
   } catch (error) {
     console.error('Error setting settings:', error);
+  }
+}
+
+export async function getCachedProducts(): Promise<Product[]> {
+  try {
+    const cached = await AsyncStorage.getItem(CACHE_KEY_PRODUCTS);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error getting cached products:', error);
+    return [];
+  }
+}
+
+export async function setCachedProducts(products: Product[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(CACHE_KEY_PRODUCTS, JSON.stringify(products));
+  } catch (error) {
+    console.error('Error setting cached products:', error);
   }
 }
