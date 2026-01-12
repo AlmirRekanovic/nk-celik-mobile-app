@@ -17,7 +17,7 @@ interface NewsContextType {
 
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
 
-const INITIAL_LOAD_COUNT = 100;
+const INITIAL_LOAD_COUNT = 20;
 const PAGE_SIZE = 20;
 
 export function NewsProvider({ children }: { children: ReactNode }) {
@@ -41,9 +41,17 @@ export function NewsProvider({ children }: { children: ReactNode }) {
       if (cached.length > 0) {
         setPosts(cached);
         setInitialized(true);
+        setLoading(false);
       }
 
-      const freshPosts = await loadInitialPosts();
+      const timeoutPromise = new Promise<NewsItem[]>((_, reject) =>
+        setTimeout(() => reject(new Error('Network timeout')), 10000)
+      );
+
+      const freshPosts = await Promise.race([
+        loadInitialPosts(),
+        timeoutPromise
+      ]);
 
       if (freshPosts.length > 0) {
         const merged = cached.length > 0 ? await mergePosts(cached, freshPosts) : freshPosts;
@@ -64,8 +72,8 @@ export function NewsProvider({ children }: { children: ReactNode }) {
       const cached = await getCachedPosts();
       if (cached.length > 0) {
         setPosts(cached);
-        setInitialized(true);
       }
+      setInitialized(true);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
@@ -10,12 +10,20 @@ import LoadingScreen from '@/components/LoadingScreen';
 function AppContent() {
   const { loading: authLoading } = useAuth();
   const { initialized: newsInitialized } = useNews();
+  const [forceReady, setForceReady] = useState(false);
 
   useEffect(() => {
     registerBackgroundFetch();
+
+    const timeout = setTimeout(() => {
+      console.warn('App initialization timeout - forcing ready state');
+      setForceReady(true);
+    }, 15000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
-  if (authLoading || !newsInitialized) {
+  if (!forceReady && (authLoading || !newsInitialized)) {
     return <LoadingScreen />;
   }
 
