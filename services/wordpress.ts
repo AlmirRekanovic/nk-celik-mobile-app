@@ -25,7 +25,11 @@ export async function fetchPosts(page: number = 1, perPage: number = DEFAULT_PAG
   const url = `${WP_BASE_URL}${POSTS_ENDPOINT}?per_page=${perPage}&page=${page}&_embed=1`;
 
   try {
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch posts: ${response.status}`);
@@ -43,7 +47,11 @@ export async function fetchPostById(id: number): Promise<NewsItem> {
   const url = `${WP_BASE_URL}${POSTS_ENDPOINT}/${id}?_embed=1`;
 
   try {
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch post: ${response.status}`);

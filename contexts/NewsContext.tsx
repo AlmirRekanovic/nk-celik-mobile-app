@@ -50,7 +50,7 @@ export function NewsProvider({ children }: { children: ReactNode }) {
 
       console.log('[NewsContext] Fetching fresh posts');
       const timeoutPromise = new Promise<NewsItem[]>((_, reject) =>
-        setTimeout(() => reject(new Error('Network timeout')), 3000)
+        setTimeout(() => reject(new Error('Network timeout')), 15000)
       );
 
       const freshPosts = await Promise.race([

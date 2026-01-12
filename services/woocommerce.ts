@@ -30,7 +30,11 @@ export async function fetchProducts(page: number = 1, perPage: number = 20): Pro
   const url = buildAuthUrl(`/products?per_page=${perPage}&page=${page}`);
 
   try {
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch products: ${response.status}`);
@@ -48,7 +52,11 @@ export async function fetchProductById(id: number): Promise<Product> {
   const url = buildAuthUrl(`/products/${id}`);
 
   try {
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Failed to fetch product: ${response.status}`);
