@@ -22,7 +22,7 @@ function AppContent() {
     const timeout = setTimeout(() => {
       console.warn('[AppContent] App initialization timeout - forcing ready state');
       setForceReady(true);
-    }, 15000);
+    }, 3000);
 
     return () => clearTimeout(timeout);
   }, []);

@@ -24,18 +24,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadAuthState = async () => {
     console.log('[AuthContext] Loading auth state');
+
+    const timeoutPromise = new Promise<void>((resolve) => {
+      setTimeout(() => {
+        console.warn('[AuthContext] Loading timeout - continuing anyway');
+        resolve();
+      }, 2000);
+    });
+
     try {
-      const storedMember = await getStoredMember();
-      const guestMode = await isGuestMode();
+      await Promise.race([
+        (async () => {
+          const storedMember = await getStoredMember();
+          const guestMode = await isGuestMode();
 
-      console.log('[AuthContext] Stored member:', !!storedMember, 'Guest mode:', guestMode);
+          console.log('[AuthContext] Stored member:', !!storedMember, 'Guest mode:', guestMode);
 
-      if (storedMember) {
-        setMember(storedMember);
-        setIsGuest(false);
-      } else if (guestMode) {
-        setIsGuest(true);
-      }
+          if (storedMember) {
+            setMember(storedMember);
+            setIsGuest(false);
+          } else if (guestMode) {
+            setIsGuest(true);
+          }
+        })(),
+        timeoutPromise
+      ]);
     } catch (error) {
       console.error('[AuthContext] Error loading auth state:', error);
     } finally {
