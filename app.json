@@ -8,7 +8,9 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "updates": {
-      "enabled": false
+      "enabled": false,
+      "fallbackToCacheTimeout": 0,
+      "checkAutomatically": "NEVER"
     },
     "ios": {
       "supportsTablet": true,
