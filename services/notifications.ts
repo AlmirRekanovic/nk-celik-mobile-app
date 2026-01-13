@@ -149,6 +149,10 @@ export async function getNotificationPreference(memberId: string): Promise<boole
 }
 
 export function setupNotificationListeners() {
+  if (Platform.OS === 'web') {
+    return () => {};
+  }
+
   const notificationListener = Notifications.addNotificationReceivedListener(notification => {
     console.log('Notification received:', notification);
   });
