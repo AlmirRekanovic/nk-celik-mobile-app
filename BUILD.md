@@ -41,6 +41,32 @@ This guide explains how to build APK and IPA files for testing with friends.
    npx eas-cli build:configure
    ```
 
+3. **Configure Environment Variables (CRITICAL)**
+
+   The app requires environment variables to work on real devices. You MUST set these before building:
+
+   ```bash
+   # Set Supabase credentials
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "https://oosnrzkrxyjzpopbnpxt.supabase.co" --type string
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-supabase-anon-key" --type string
+
+   # Set WooCommerce credentials (from your .env file)
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_CONSUMER_KEY --value "ck_6ef6d57acfcdabd4e1600853cbf86a2637dc3cad" --type string
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_CONSUMER_SECRET --value "cs_257517cdc65627c06d3347126655faa8ffa5593e" --type string
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_SITE_URL --value "https://nkcelik.ba" --type string
+   ```
+
+   **To verify secrets are set:**
+   ```bash
+   npx eas-cli secret:list
+   ```
+
+   **To update a secret:**
+   ```bash
+   npx eas-cli secret:delete --name EXPO_PUBLIC_WC_CONSUMER_KEY
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_CONSUMER_KEY --value "new-value" --type string
+   ```
+
 ## Building APK (Android)
 
 ### Quick Testing Build
@@ -111,10 +137,36 @@ Configured in `eas.json`:
 
 ## Troubleshooting
 
+### Shop Not Working on Real Devices
+
+If the shop shows "Prodavnica nije pravilno konfigurirana" or products don't load:
+
+1. **Check if environment variables are set:**
+   ```bash
+   npx eas-cli secret:list
+   ```
+   You should see all 5 environment variables listed.
+
+2. **Set missing variables:**
+   Follow the environment variable setup instructions above.
+
+3. **Rebuild the app:**
+   After setting/updating environment variables, you MUST rebuild:
+   ```bash
+   npm run build:android
+   ```
+
+4. **Test in development:**
+   Environment variables from `.env` work automatically in development:
+   ```bash
+   npm run dev
+   ```
+
 ### Build Failed
 - Check build logs on Expo dashboard
 - Verify all dependencies are compatible
 - Ensure app.json is properly configured
+- Verify environment variables are set correctly
 
 ### Can't Install APK
 - Enable "Install from Unknown Sources"
@@ -125,6 +177,11 @@ Configured in `eas.json`:
 - Verify Apple Developer account is active
 - Check bundle identifier is unique
 - Ensure certificates are valid
+
+### Authentication Issues
+- Verify Supabase URL and anon key are correct
+- Check database migrations have been applied
+- Ensure RLS policies are properly configured
 
 ## Quick Testing Alternative: Expo Go
 

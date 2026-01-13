@@ -46,15 +46,23 @@ export default function ShopScreen() {
         timeoutPromise
       ]).catch(err => {
         console.error('Error fetching fresh products:', err);
+        if (err.message?.includes('credentials not configured')) {
+          throw err;
+        }
         return [];
       });
 
       if (freshProducts.length > 0) {
         setProducts(freshProducts);
         await setCachedProducts(freshProducts);
+      } else if (products.length === 0) {
+        setError('Nije moguće učitati proizvode. Molimo pokušajte kasnije.');
       }
-    } catch (err) {
-      setError('Greška pri učitavanju proizvoda');
+    } catch (err: any) {
+      const errorMessage = err.message?.includes('credentials')
+        ? 'Prodavnica nije pravilno konfigurirana. Kontaktirajte administratora.'
+        : 'Greška pri učitavanju proizvoda. Provjerite internet konekciju.';
+      setError(errorMessage);
       console.error('Error loading products:', err);
     } finally {
       setLoading(false);
