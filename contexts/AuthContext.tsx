@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Member, AuthState } from '@/types/auth';
 import { getStoredMember, isGuestMode, loginMember, loginMemberByEmail, loginWithEmailAndPassword, setGuestMode, logout } from '@/services/auth';
+import { registerForPushNotificationsAsync, setupNotificationListeners } from '@/services/notifications';
 
 interface AuthContextType extends AuthState {
   login: (firstName: string, lastName: string, memberId: string) => Promise<boolean>;
@@ -20,7 +21,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     loadAuthState();
+    const cleanup = setupNotificationListeners();
+    return cleanup;
   }, []);
+
+  useEffect(() => {
+    if (member?.id) {
+      registerForPushNotificationsAsync(member.id).catch(error => {
+        console.log('Failed to register for push notifications:', error);
+      });
+    }
+  }, [member?.id]);
 
   const loadAuthState = async () => {
     console.log('[AuthContext] Loading auth state');

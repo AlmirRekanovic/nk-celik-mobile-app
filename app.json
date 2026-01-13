@@ -14,14 +14,22 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nkcelik.app"
+      "bundleIdentifier": "com.nkcelik.app",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#000000"
       },
       "package": "com.nkcelik.app",
-      "jsEngine": "hermes"
+      "jsEngine": "hermes",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "USE_FULL_SCREEN_INTENT"
+      ]
     },
     "web": {
       "bundler": "metro",

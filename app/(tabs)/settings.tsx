@@ -14,8 +14,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppSettings } from '@/types/news';
 import { getSettings, setSettings, getLastSyncTime } from '@/services/storage';
 import { DEFAULT_PAGE_SIZE } from '@/constants/config';
-import { LogOut, UserCog, LogIn } from '@/components/Icons';
+import { LogOut, UserCog, LogIn, Bell } from '@/components/Icons';
 import AdBanner from '@/components/AdBanner';
+import { getNotificationPreference, updateNotificationPreference } from '@/services/notifications';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -25,11 +26,13 @@ export default function SettingsScreen() {
     postsPerPage: DEFAULT_PAGE_SIZE,
   });
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
     loadSettings();
     loadLastSync();
-  }, []);
+    loadNotificationPreference();
+  }, [member?.id]);
 
   const loadSettings = async () => {
     const loadedSettings = await getSettings();
@@ -39,6 +42,20 @@ export default function SettingsScreen() {
   const loadLastSync = async () => {
     const syncTime = await getLastSyncTime();
     setLastSync(syncTime);
+  };
+
+  const loadNotificationPreference = async () => {
+    if (member?.id) {
+      const enabled = await getNotificationPreference(member.id);
+      setNotificationsEnabled(enabled);
+    }
+  };
+
+  const handleToggleNotifications = async (value: boolean) => {
+    if (member?.id) {
+      setNotificationsEnabled(value);
+      await updateNotificationPreference(member.id, value);
+    }
   };
 
   const handleToggleBackgroundRefresh = async (value: boolean) => {
@@ -137,6 +154,27 @@ export default function SettingsScreen() {
               <LogIn size={20} color="#FFFFFF" />
               <Text style={styles.loginButtonText}>Prijavi se</Text>
             </TouchableOpacity>
+          </View>
+        )}
+
+        {member && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Obavještenja</Text>
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Push obavještenja</Text>
+                <Text style={styles.settingDescription}>
+                  Primaj obavještenja o novim vijestima i anketama
+                </Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ false: '#D1D5DB', true: '#FFE8A1' }}
+                thumbColor={notificationsEnabled ? '#D4AF37' : '#F3F4F6'}
+              />
+            </View>
           </View>
         )}
 
