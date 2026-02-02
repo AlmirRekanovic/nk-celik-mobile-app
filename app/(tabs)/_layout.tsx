@@ -2,10 +2,12 @@ import { Tabs } from 'expo-router';
 import { Newspaper, Settings, Vote, ShoppingBag, ScanLine, Ticket } from '@/components/Icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { member } = useAuth();
   const isAdmin = member?.is_admin || false;
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -17,8 +19,8 @@ export default function TabLayout() {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E7EB',
-          paddingBottom: Platform.OS === 'ios' ? 20 : 5,
-          height: Platform.OS === 'ios' ? 85 : 65,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 10,
+          height: (insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 10) + 60,
         },
         tabBarLabelStyle: {
           fontSize: 11,
