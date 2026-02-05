@@ -5,6 +5,7 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { registerBackgroundFetch } from '@/services/backgroundFetch';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { NewsProvider, useNews } from '@/contexts/NewsContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import VideoSplashScreen from '@/components/VideoSplashScreen';
 
@@ -65,10 +66,12 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <NewsProvider>
-        <AppContent />
-      </NewsProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <NewsProvider>
+          <AppContent />
+        </NewsProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
