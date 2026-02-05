@@ -216,10 +216,52 @@ export async function createPoll(
       return null;
     }
 
+    if (data) {
+      sendPollNotification(data.id, title, description).catch(err =>
+        console.error('Failed to send poll notification:', err)
+      );
+    }
+
     return data;
   } catch (error) {
     console.error('Error creating poll:', error);
     return null;
+  }
+}
+
+async function sendPollNotification(pollId: string, title: string, description: string): Promise<void> {
+  try {
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Supabase credentials not configured');
+      return;
+    }
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({
+        title: 'Nova anketa! 📊',
+        body: title,
+        type: 'poll',
+        data: {
+          poll_id: pollId,
+          poll_title: title,
+          poll_description: description,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to send notification:', await response.text());
+    }
+  } catch (error) {
+    console.error('Error sending poll notification:', error);
   }
 }
 

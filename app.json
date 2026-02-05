@@ -7,29 +7,60 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": "1.0.0",
+    "icon": "./assets/celik.fix.badge.png",
+    "splash": {
+      "image": "./assets/celik.fix.badge.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "updates": {
-      "enabled": false,
-      "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "NEVER"
+      "url": "https://u.expo.dev/your-project-id"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nkcelik.app"
+      "bundleIdentifier": "com.nkcelik.app",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"],
+        "NSCameraUsageDescription": "This app uses the camera to scan QR codes for ticket check-in."
+      },
+      "icon": "./assets/celik.fix.badge.png"
     },
     "android": {
+      "icon": "./assets/celik.fix.badge.png",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/celik.fix.badge.png",
         "backgroundColor": "#000000"
       },
       "package": "com.nkcelik.app",
-      "jsEngine": "hermes"
+      "jsEngine": "hermes",
+      "permissions": [
+        "CAMERA",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "USE_FULL_SCREEN_INTENT",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/celik.fix.badge.png"
     },
     "plugins": [
       "expo-router",
+<<<<<<< HEAD
       "expo-font"
+=======
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/celik.fix.badge.png",
+          "color": "#000000"
+        }
+      ]
+>>>>>>> 605f7290827e26b80a814be46edac670ec227e36
     ],
     "experiments": {
       "typedRoutes": true
@@ -37,7 +68,11 @@
     "extra": {
       "router": {},
       "eas": {
+<<<<<<< HEAD
         "projectId": "dff972e8-b326-44b6-ab97-685527ce10da"
+=======
+        "projectId": "your-project-id"
+>>>>>>> 605f7290827e26b80a814be46edac670ec227e36
       }
     }
   }

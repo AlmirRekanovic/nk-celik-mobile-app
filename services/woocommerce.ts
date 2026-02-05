@@ -2,6 +2,11 @@ import { WC_BASE_URL, WC_CONSUMER_KEY, WC_CONSUMER_SECRET } from '@/constants/co
 import { WCProduct, Product } from '@/types/products';
 
 function buildAuthUrl(endpoint: string): string {
+  if (!WC_CONSUMER_KEY || !WC_CONSUMER_SECRET) {
+    console.error('WooCommerce credentials not configured');
+    throw new Error('WooCommerce credentials not configured. Please check your environment variables.');
+  }
+
   const url = new URL(`${WC_BASE_URL}${endpoint}`);
   url.searchParams.append('consumer_key', WC_CONSUMER_KEY);
   url.searchParams.append('consumer_secret', WC_CONSUMER_SECRET);

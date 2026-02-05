@@ -3,7 +3,10 @@
     "base": {
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://oosnrzkrxyjzpopbnpxt.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vc25yemtyeHlqenBvcGJucHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzOTA5MTMsImV4cCI6MjA3Nzk2NjkxM30.71z21rKhVSBAf7rUw2o0Db5Xd1BqtuGJ08JO_SSTbAM"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vc25yemtyeHlqenBvcGJucHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzOTA5MTMsImV4cCI6MjA3Nzk2NjkxM30.71z21rKhVSBAf7rUw2o0Db5Xd1BqtuGJ08JO_SSTbAM",
+        "EXPO_PUBLIC_WC_CONSUMER_KEY": "ck_6ef6d57acfcdabd4e1600853cbf86a2637dc3cad",
+        "EXPO_PUBLIC_WC_CONSUMER_SECRET": "cs_257517cdc65627c06d3347126655faa8ffa5593e",
+        "EXPO_PUBLIC_WC_SITE_URL": "https://nkcelik.ba"
       }
     },
     "development": {
@@ -12,25 +15,41 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://oosnrzkrxyjzpopbnpxt.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vc25yemtyeHlqenBvcGJucHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzOTA5MTMsImV4cCI6MjA3Nzk2NjkxM30.71z21rKhVSBAf7rUw2o0Db5Xd1BqtuGJ08JO_SSTbAM"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vc25yemtyeHlqenBvcGJucHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzOTA5MTMsImV4cCI6MjA3Nzk2NjkxM30.71z21rKhVSBAf7rUw2o0Db5Xd1BqtuGJ08JO_SSTbAM",
+        "EXPO_PUBLIC_WC_CONSUMER_KEY": "ck_6ef6d57acfcdabd4e1600853cbf86a2637dc3cad",
+        "EXPO_PUBLIC_WC_CONSUMER_SECRET": "cs_257517cdc65627c06d3347126655faa8ffa5593e",
+        "EXPO_PUBLIC_WC_SITE_URL": "https://nkcelik.ba"
       }
     },
     "preview": {
       "extends": "base",
       "distribution": "internal",
-      "android": { "buildType": "apk" },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://oosnrzkrxyjzpopbnpxt.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vc25yemtyeHlqenBvcGJucHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzOTA5MTMsImV4cCI6MjA3Nzk2NjkxM30.71z21rKhVSBAf7rUw2o0Db5Xd1BqtuGJ08JO_SSTbAM"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vc25yemtyeHlqenBvcGJucHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzOTA5MTMsImV4cCI6MjA3Nzk2NjkxM30.71z21rKhVSBAf7rUw2o0Db5Xd1BqtuGJ08JO_SSTbAM",
+        "EXPO_PUBLIC_WC_CONSUMER_KEY": "ck_6ef6d57acfcdabd4e1600853cbf86a2637dc3cad",
+        "EXPO_PUBLIC_WC_CONSUMER_SECRET": "cs_257517cdc65627c06d3347126655faa8ffa5593e",
+        "EXPO_PUBLIC_WC_SITE_URL": "https://nkcelik.ba"
       }
     },
     "production": {
       "extends": "base",
-      "android": { "buildType": "app-bundle" },
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://oosnrzkrxyjzpopbnpxt.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vc25yemtyeHlqenBvcGJucHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzOTA5MTMsImV4cCI6MjA3Nzk2NjkxM30.71z21rKhVSBAf7rUw2o0Db5Xd1BqtuGJ08JO_SSTbAM"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vc25yemtyeHlqenBvcGJucHh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzOTA5MTMsImV4cCI6MjA3Nzk2NjkxM30.71z21rKhVSBAf7rUw2o0Db5Xd1BqtuGJ08JO_SSTbAM",
+        "EXPO_PUBLIC_WC_CONSUMER_KEY": "ck_6ef6d57acfcdabd4e1600853cbf86a2637dc3cad",
+        "EXPO_PUBLIC_WC_CONSUMER_SECRET": "cs_257517cdc65627c06d3347126655faa8ffa5593e",
+        "EXPO_PUBLIC_WC_SITE_URL": "https://nkcelik.ba"
       }
     }
+  },
+  "submit": {
+    "production": {}
   }
 }
