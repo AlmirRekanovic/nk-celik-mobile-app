@@ -6,6 +6,7 @@ import { registerBackgroundFetch } from '@/services/backgroundFetch';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { NewsProvider, useNews } from '@/contexts/NewsContext';
 import LoadingScreen from '@/components/LoadingScreen';
+import VideoSplashScreen from '@/components/VideoSplashScreen';
 
 function AppContent() {
   const { loading: authLoading } = useAuth();
@@ -53,6 +54,15 @@ function AppContent() {
 
 export default function RootLayout() {
   useFrameworkReady();
+  const [showVideoSplash, setShowVideoSplash] = useState(true);
+
+  const handleVideoComplete = () => {
+    setShowVideoSplash(false);
+  };
+
+  if (showVideoSplash) {
+    return <VideoSplashScreen onComplete={handleVideoComplete} />;
+  }
 
   return (
     <AuthProvider>
