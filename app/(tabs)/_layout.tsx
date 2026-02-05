@@ -1,11 +1,13 @@
 import { Tabs } from 'expo-router';
 import { Newspaper, Settings, Vote, ShoppingBag, ScanLine, Ticket } from '@/components/Icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { member } = useAuth();
+  const { isDarkMode } = useTheme();
   const isAdmin = member?.is_admin || false;
   const insets = useSafeAreaInsets();
 
@@ -14,11 +16,11 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#D4AF37',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarInactiveTintColor: isDarkMode ? '#9CA3AF' : '#6B7280',
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
           borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
+          borderTopColor: isDarkMode ? '#374151' : '#E5E7EB',
           paddingBottom: insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 10,
           height: (insets.bottom > 0 ? insets.bottom : Platform.OS === 'ios' ? 20 : 10) + 60,
         },

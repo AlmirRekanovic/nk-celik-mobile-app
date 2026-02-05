@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { NewsItem } from '@/types/news';
 import { useNews } from '@/contexts/NewsContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import OptimizedImage from '@/components/OptimizedImage';
 import AdInFeed from '@/components/AdInFeed';
 
@@ -20,7 +21,7 @@ type FeedItem =
   | { type: 'news'; data: NewsItem }
   | { type: 'ad'; id: string };
 
-const NewsItemCard = memo(({ item, onPress }: { item: NewsItem; onPress: () => void }) => {
+const NewsItemCard = memo(({ item, onPress, isDarkMode }: { item: NewsItem; onPress: () => void; isDarkMode: boolean }) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('bs-BA', {
@@ -34,8 +35,13 @@ const NewsItemCard = memo(({ item, onPress }: { item: NewsItem; onPress: () => v
     return html.replace(/<[^>]*>/g, '').trim().substring(0, 150) + '...';
   };
 
+  const cardBg = isDarkMode ? '#1F2937' : '#FFFFFF';
+  const titleColor = isDarkMode ? '#F9FAFB' : '#1F2937';
+  const dateColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+  const excerptColor = isDarkMode ? '#D1D5DB' : '#4B5563';
+
   return (
-    <TouchableOpacity style={styles.newsCard} onPress={onPress}>
+    <TouchableOpacity style={[styles.newsCard, { backgroundColor: cardBg }]} onPress={onPress}>
       {item.featuredImageUrl && (
         <OptimizedImage
           uri={item.featuredImageUrl}
@@ -44,11 +50,11 @@ const NewsItemCard = memo(({ item, onPress }: { item: NewsItem; onPress: () => v
         />
       )}
       <View style={styles.newsContent}>
-        <Text style={styles.newsTitle} numberOfLines={2}>
+        <Text style={[styles.newsTitle, { color: titleColor }]} numberOfLines={2}>
           {item.title}
         </Text>
-        <Text style={styles.newsDate}>{formatDate(item.publishedAt)}</Text>
-        <Text style={styles.newsExcerpt} numberOfLines={3}>
+        <Text style={[styles.newsDate, { color: dateColor }]}>{formatDate(item.publishedAt)}</Text>
+        <Text style={[styles.newsExcerpt, { color: excerptColor }]} numberOfLines={3}>
           {stripHtml(item.excerptHtml)}
         </Text>
       </View>
@@ -59,6 +65,7 @@ const NewsItemCard = memo(({ item, onPress }: { item: NewsItem; onPress: () => v
 export default function NewsListScreen() {
   const router = useRouter();
   const { posts, loading, error, refreshPosts, loadMorePosts, hasMore } = useNews();
+  const { isDarkMode } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -90,8 +97,8 @@ export default function NewsListScreen() {
     if (item.type === 'ad') {
       return <AdInFeed />;
     }
-    return <NewsItemCard item={item.data} onPress={() => router.push(`/news/${item.data.id}`)} />;
-  }, [router]);
+    return <NewsItemCard item={item.data} onPress={() => router.push(`/news/${item.data.id}`)} isDarkMode={isDarkMode} />;
+  }, [router, isDarkMode]);
 
   const renderHeader = useCallback(() => (
     <View style={styles.header}>
@@ -115,20 +122,28 @@ export default function NewsListScreen() {
     );
   }, [loadingMore]);
 
-  const renderEmpty = useCallback(() => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
-        {error ? 'Greška pri učitavanju vijesti' : 'Nema vijesti za prikaz'}
-      </Text>
-      <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-        <Text style={styles.retryButtonText}>Pokušaj ponovo</Text>
-      </TouchableOpacity>
-    </View>
-  ), [error, onRefresh]);
+  const renderEmpty = useCallback(() => {
+    const emptyTextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={[styles.emptyText, { color: emptyTextColor }]}>
+          {error ? 'Greška pri učitavanju vijesti' : 'Nema vijesti za prikaz'}
+        </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+          <Text style={styles.retryButtonText}>Pokušaj ponovo</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }, [error, onRefresh, isDarkMode]);
+
+  const backgroundColor = isDarkMode ? '#000000' : '#F9FAFB';
+  const footerBg = isDarkMode ? '#1F2937' : '#FFFFFF';
+  const footerBorder = isDarkMode ? '#374151' : '#E5E7EB';
+  const footerTextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor }]}>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       {renderHeader()}
       <FlatList
         data={feedItems}
@@ -153,8 +168,8 @@ export default function NewsListScreen() {
         initialNumToRender={10}
         windowSize={10}
       />
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Podaci preuzeti sa nkcelik.ba</Text>
+      <View style={[styles.footer, { backgroundColor: footerBg, borderTopColor: footerBorder }]}>
+        <Text style={[styles.footerText, { color: footerTextColor }]}>Podaci preuzeti sa nkcelik.ba</Text>
         <Text style={styles.footerCredit}>Created by Reka</Text>
       </View>
     </View>

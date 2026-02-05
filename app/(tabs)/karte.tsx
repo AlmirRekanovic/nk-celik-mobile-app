@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useState, useEffect } from 'react';
 import { fetchMemberTickets } from '@/services/tickets';
 import { Ticket } from '@/types/products';
@@ -19,6 +20,7 @@ import QRCode from 'react-native-qrcode-svg';
 
 export default function KarteScreen() {
   const { member, isGuest } = useAuth();
+  const { isDarkMode } = useTheme();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -94,25 +96,31 @@ export default function KarteScreen() {
     }
   };
 
+  const backgroundColor = isDarkMode ? '#000000' : '#F9FAFB';
+  const cardBg = isDarkMode ? '#1F2937' : '#FFFFFF';
+  const textColor = isDarkMode ? '#F9FAFB' : '#111827';
+  const subtextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+  const borderColor = isDarkMode ? '#374151' : '#E5E7EB';
+
   const renderTicket = ({ item }: { item: Ticket }) => {
     const isExpanded = expandedTicketId === item.id;
 
     return (
       <TouchableOpacity
-        style={styles.ticketCard}
+        style={[styles.ticketCard, { backgroundColor: cardBg }]}
         onPress={() => toggleTicket(item.id)}
         activeOpacity={0.7}
       >
         <View style={styles.ticketHeader}>
           <View style={styles.ticketInfo}>
-            <Text style={styles.ticketType} numberOfLines={2}>
+            <Text style={[styles.ticketType, { color: textColor }]} numberOfLines={2}>
               {item.ticket_type || item.event_name}
             </Text>
             <View style={styles.ticketMeta}>
               {item.event_date && (
                 <View style={styles.metaItem}>
-                  <Calendar size={14} color="#6B7280" />
-                  <Text style={styles.metaText}>{formatDate(item.event_date)}</Text>
+                  <Calendar size={14} color={subtextColor} />
+                  <Text style={[styles.metaText, { color: subtextColor }]}>{formatDate(item.event_date)}</Text>
                 </View>
               )}
             </View>
@@ -123,22 +131,22 @@ export default function KarteScreen() {
         </View>
 
         {isExpanded && (
-          <View style={styles.ticketExpanded}>
+          <View style={[styles.ticketExpanded, { borderTopColor: borderColor }]}>
             <View style={styles.qrContainer}>
               <QRCode value={item.ticket_code} size={200} backgroundColor="#FFFFFF" />
             </View>
             <Text style={styles.qrLabel}>Skeniraj QR kod na ulazu</Text>
-            <View style={styles.ticketDetails}>
-              <Text style={styles.detailLabel}>Kod karte:</Text>
-              <Text style={styles.detailValue}>{item.ticket_code}</Text>
+            <View style={[styles.ticketDetails, { backgroundColor: isDarkMode ? '#374151' : '#F9FAFB' }]}>
+              <Text style={[styles.detailLabel, { color: subtextColor }]}>Kod karte:</Text>
+              <Text style={[styles.detailValue, { color: textColor }]}>{item.ticket_code}</Text>
               {item.event_name && (
                 <>
-                  <Text style={styles.detailLabel}>Događaj:</Text>
-                  <Text style={styles.detailValue}>{item.event_name}</Text>
+                  <Text style={[styles.detailLabel, { color: subtextColor }]}>Događaj:</Text>
+                  <Text style={[styles.detailValue, { color: textColor }]}>{item.event_name}</Text>
                 </>
               )}
-              <Text style={styles.detailLabel}>Naručilac:</Text>
-              <Text style={styles.detailValue}>{item.customer_name}</Text>
+              <Text style={[styles.detailLabel, { color: subtextColor }]}>Naručilac:</Text>
+              <Text style={[styles.detailValue, { color: textColor }]}>{item.customer_name}</Text>
             </View>
           </View>
         )}
@@ -152,14 +160,14 @@ export default function KarteScreen() {
 
   if (isGuest) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
+      <View style={[styles.container, { backgroundColor }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Moje Karte</Text>
         </View>
         <View style={styles.emptyContainer}>
           <TicketIcon size={64} color="#9CA3AF" />
-          <Text style={styles.emptyText}>Prijavite se da vidite svoje karte</Text>
+          <Text style={[styles.emptyText, { color: subtextColor }]}>Prijavite se da vidite svoje karte</Text>
         </View>
       </View>
     );
@@ -167,22 +175,22 @@ export default function KarteScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
+      <View style={[styles.container, { backgroundColor }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Moje Karte</Text>
         </View>
-        <View style={styles.loadingContainer}>
+        <View style={[styles.loadingContainer, { backgroundColor }]}>
           <ActivityIndicator size="large" color="#D4AF37" />
-          <Text style={styles.loadingText}>Učitavanje karata...</Text>
+          <Text style={[styles.loadingText, { color: subtextColor }]}>Učitavanje karata...</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor }]}>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
@@ -219,8 +227,8 @@ export default function KarteScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <TicketIcon size={64} color="#9CA3AF" />
-              <Text style={styles.emptyText}>Nemate kupljenih karata</Text>
-              <Text style={styles.emptySubtext}>
+              <Text style={[styles.emptyText, { color: subtextColor }]}>Nemate kupljenih karata</Text>
+              <Text style={[styles.emptySubtext, { color: isDarkMode ? '#6B7280' : '#9CA3AF' }]}>
                 Karte kupljene na webu će se automatski pojaviti ovdje
               </Text>
             </View>

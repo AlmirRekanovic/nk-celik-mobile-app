@@ -12,6 +12,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { PollWithVotes } from '@/types/auth';
 import { getActivePolls, castVote } from '@/services/polls';
 import { CheckCircle2, Circle, BarChart3 } from '@/components/Icons';
@@ -20,6 +21,7 @@ import AdInFeed from '@/components/AdInFeed';
 
 export default function VotingScreen() {
   const { member, isGuest } = useAuth();
+  const { isDarkMode } = useTheme();
   const [polls, setPolls] = useState<PollWithVotes[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -69,6 +71,12 @@ export default function VotingScreen() {
     setVotingPollId(null);
   };
 
+  const backgroundColor = isDarkMode ? '#000000' : '#F9FAFB';
+  const cardBg = isDarkMode ? '#1F2937' : '#FFFFFF';
+  const textColor = isDarkMode ? '#F9FAFB' : '#1F2937';
+  const subtextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+  const borderColor = isDarkMode ? '#374151' : '#E5E7EB';
+
   const renderPollOption = (poll: PollWithVotes, option: string) => {
     const hasVoted = !!poll.user_vote;
     const isSelected = poll.user_vote?.option_value === option;
@@ -80,7 +88,7 @@ export default function VotingScreen() {
         key={option}
         style={[
           styles.optionButton,
-          hasVoted && styles.optionButtonDisabled,
+          hasVoted && [styles.optionButtonDisabled, { borderColor, backgroundColor: isDarkMode ? '#374151' : '#F9FAFB' }],
           isSelected && styles.optionButtonSelected,
         ]}
         onPress={() => handleVote(poll.id, option)}
@@ -92,20 +100,20 @@ export default function VotingScreen() {
             ) : (
               <Circle size={24} color={hasVoted ? '#9CA3AF' : '#D4AF37'} />
             )}
-            <Text style={[styles.optionText, hasVoted && styles.optionTextDisabled]}>
+            <Text style={[styles.optionText, { color: textColor }, hasVoted && { color: subtextColor }]}>
               {option}
             </Text>
           </View>
           {hasVoted && (
             <View style={styles.optionRight}>
-              <Text style={styles.voteCount}>
+              <Text style={[styles.voteCount, { color: isDarkMode ? '#D1D5DB' : '#4B5563' }]}>
                 {voteCount} ({percentage.toFixed(0)}%)
               </Text>
             </View>
           )}
         </View>
         {hasVoted && (
-          <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBarContainer, { backgroundColor: isDarkMode ? '#4B5563' : '#E5E7EB' }]}>
             <View style={[styles.progressBar, { width: `${percentage}%` }]} />
           </View>
         )}
@@ -115,9 +123,9 @@ export default function VotingScreen() {
 
   const renderPoll = (poll: PollWithVotes, index: number) => (
     <>
-      <View key={poll.id} style={styles.pollCard}>
+      <View key={poll.id} style={[styles.pollCard, { backgroundColor: cardBg }]}>
         <View style={styles.pollHeader}>
-          <Text style={styles.pollTitle}>{poll.title}</Text>
+          <Text style={[styles.pollTitle, { color: textColor }]}>{poll.title}</Text>
           {poll.user_vote && (
             <View style={styles.votedBadge}>
               <CheckCircle2 size={16} color="#059669" />
@@ -127,22 +135,22 @@ export default function VotingScreen() {
         </View>
 
         {poll.description ? (
-          <Text style={styles.pollDescription}>{poll.description}</Text>
+          <Text style={[styles.pollDescription, { color: subtextColor }]}>{poll.description}</Text>
         ) : null}
 
         <View style={styles.optionsContainer}>
           {poll.options.map(option => renderPollOption(poll, option))}
         </View>
 
-        <View style={styles.pollFooter}>
+        <View style={[styles.pollFooter, { borderTopColor: isDarkMode ? '#374151' : '#F3F4F6' }]}>
           <View style={styles.pollStats}>
-            <BarChart3 size={16} color="#6B7280" />
-            <Text style={styles.pollStatsText}>
+            <BarChart3 size={16} color={subtextColor} />
+            <Text style={[styles.pollStatsText, { color: subtextColor }]}>
               Ukupno glasova: {poll.total_votes}
             </Text>
           </View>
           {poll.ends_at && (
-            <Text style={styles.pollEndsAt}>
+            <Text style={[styles.pollEndsAt, { color: isDarkMode ? '#6B7280' : '#9CA3AF' }]}>
               Završava: {new Date(poll.ends_at).toLocaleDateString('bs-BA')}
             </Text>
           )}
@@ -165,8 +173,8 @@ export default function VotingScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <BarChart3 size={64} color="#D1D5DB" />
-      <Text style={styles.emptyText}>Trenutno nema aktivnih anketa</Text>
-      <Text style={styles.emptySubtext}>
+      <Text style={[styles.emptyText, { color: isDarkMode ? '#D1D5DB' : '#4B5563' }]}>Trenutno nema aktivnih anketa</Text>
+      <Text style={[styles.emptySubtext, { color: subtextColor }]}>
         Nove ankete će se pojaviti ovdje kada ih admin kreira
       </Text>
     </View>
@@ -174,16 +182,16 @@ export default function VotingScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <StatusBar style="dark" />
+      <View style={[styles.centerContainer, { backgroundColor }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
         <ActivityIndicator size="large" color="#D4AF37" />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor }]}>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Glasanje</Text>
         {member && (
@@ -214,7 +222,7 @@ export default function VotingScreen() {
             <AdBanner size="medium" style={styles.topBanner} />
             {polls.map((poll, index) => renderPoll(poll, index))}
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Created by Reka</Text>
+              <Text style={[styles.footerText, { color: isDarkMode ? '#6B7280' : '#9CA3AF' }]}>Created by Reka</Text>
             </View>
           </>
         )}
