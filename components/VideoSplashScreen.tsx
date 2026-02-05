@@ -40,7 +40,7 @@ export default function VideoSplashScreen({ onComplete }: VideoSplashScreenProps
       <Video
         ref={video}
         style={styles.video}
-        source={require('../assets/splash.mp4')}
+        source={require('../assets/splash.mp4.mp4')}
         resizeMode={ResizeMode.COVER}
         shouldPlay
         isLooping={false}
