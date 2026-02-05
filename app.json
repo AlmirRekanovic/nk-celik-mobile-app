@@ -7,6 +7,12 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/celik.fix.badge.png",
+    "splash": {
+      "image": "./assets/celik.fix.badge.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "updates": {
       "enabled": false,
       "fallbackToCacheTimeout": 0,
@@ -16,31 +22,51 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.nkcelik.app",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
-      }
+        "UIBackgroundModes": ["remote-notification"],
+        "NSCameraUsageDescription": "This app uses the camera to scan QR codes for ticket check-in."
+      },
+      "icon": "./assets/celik.fix.badge.png"
     },
     "android": {
+      "icon": "./assets/celik.fix.badge.png",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/celik.fix.badge.png",
         "backgroundColor": "#000000"
       },
       "package": "com.nkcelik.app",
       "jsEngine": "hermes",
       "permissions": [
+        "CAMERA",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "USE_FULL_SCREEN_INTENT"
+        "USE_FULL_SCREEN_INTENT",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/celik.fix.badge.png"
     },
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/celik.fix.badge.png",
+          "color": "#000000"
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "your-project-id"
+      }
     }
   }
 }

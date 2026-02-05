@@ -162,7 +162,7 @@ export default function ShopScreen() {
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadProducts}>
+          <TouchableOpacity style={styles.retryButton} onPress={() => loadProducts()}>
             <Text style={styles.retryButtonText}>Pokušaj ponovo</Text>
           </TouchableOpacity>
         </View>

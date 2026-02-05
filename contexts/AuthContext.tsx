@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import { Member, AuthState } from '@/types/auth';
 import { getStoredMember, isGuestMode, loginMember, loginMemberByEmail, loginWithEmailAndPassword, setGuestMode, logout } from '@/services/auth';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '@/services/notifications';
+import NotificationPermissionModal from '@/components/NotificationPermissionModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const NOTIFICATION_PROMPT_KEY = 'NK_CELIK_NOTIFICATION_PROMPTED';
 
 interface AuthContextType extends AuthState {
   login: (firstName: string, lastName: string, memberId: string) => Promise<boolean>;
@@ -18,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [member, setMember] = useState<Member | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
     loadAuthState();
@@ -26,12 +32,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (member?.id && Platform.OS !== 'web') {
+      checkAndShowNotificationPrompt();
+    }
+  }, [member?.id]);
+
+  const checkAndShowNotificationPrompt = async () => {
+    try {
+      const hasPrompted = await AsyncStorage.getItem(NOTIFICATION_PROMPT_KEY);
+      if (!hasPrompted) {
+        setShowNotificationModal(true);
+      }
+    } catch (error) {
+      console.error('Error checking notification prompt:', error);
+    }
+  };
+
+  const handleAcceptNotifications = async () => {
+    setShowNotificationModal(false);
+    await AsyncStorage.setItem(NOTIFICATION_PROMPT_KEY, 'true');
     if (member?.id) {
       registerForPushNotificationsAsync(member.id).catch(error => {
         console.log('Failed to register for push notifications:', error);
       });
     }
-  }, [member?.id]);
+  };
+
+  const handleDeclineNotifications = async () => {
+    setShowNotificationModal(false);
+    await AsyncStorage.setItem(NOTIFICATION_PROMPT_KEY, 'true');
+  };
 
   const loadAuthState = async () => {
     console.log('[AuthContext] Loading auth state');
@@ -130,6 +160,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
       }}>
       {children}
+      <NotificationPermissionModal
+        visible={showNotificationModal}
+        onAccept={handleAcceptNotifications}
+        onDecline={handleDeclineNotifications}
+      />
     </AuthContext.Provider>
   );
 }
