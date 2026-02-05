@@ -7,6 +7,7 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": "1.0.0",
     "icon": "./assets/celik.fix.badge.png",
     "splash": {
       "image": "./assets/celik.fix.badge.png",
@@ -14,9 +15,7 @@
       "backgroundColor": "#000000"
     },
     "updates": {
-      "enabled": false,
-      "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "NEVER"
+      "url": "https://u.expo.dev/your-project-id"
     },
     "ios": {
       "supportsTablet": true,
