@@ -36,6 +36,15 @@ export default function VideoSplashScreen({ onComplete }: VideoSplashScreenProps
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const completeTimer = setTimeout(() => {
+      console.log('[VideoSplash] Auto-completing after 5 seconds');
+      onComplete();
+    }, 5000);
+
+    return () => clearTimeout(completeTimer);
+  }, [onComplete]);
+
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
     if (status.isLoaded && status.isPlaying) {
       console.log('[VideoSplash] Video is playing');
