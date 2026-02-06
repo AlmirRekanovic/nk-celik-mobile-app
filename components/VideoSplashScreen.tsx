@@ -16,12 +16,13 @@ export default function VideoSplashScreen({ onComplete }: VideoSplashScreenProps
 
   useEffect(() => {
     SplashScreen.hideAsync();
+    console.log('[VideoSplash] Component mounted');
 
     timeoutRef.current = setTimeout(() => {
-      console.log('[VideoSplash] Timeout reached - completing splash');
+      console.log('[VideoSplash] Timeout reached (15s) - completing splash');
       setDebugInfo('Timeout - skipping video');
       onComplete();
-    }, 5000);
+    }, 15000);
 
     return () => {
       if (timeoutRef.current) {
@@ -64,14 +65,25 @@ export default function VideoSplashScreen({ onComplete }: VideoSplashScreenProps
     setHasError(true);
   };
 
-  const handleLoad = () => {
+  const handleLoad = async () => {
     console.log('[VideoSplash] Video onLoad triggered');
     setDebugInfo('Video loaded, starting playback...');
-    video.current?.playAsync().catch((error) => {
+
+    try {
+      if (video.current) {
+        await video.current.setStatusAsync({
+          shouldPlay: true,
+          isLooping: false,
+          isMuted: false,
+          volume: 1.0,
+        });
+        console.log('[VideoSplash] Video playback started');
+      }
+    } catch (error: any) {
       console.error('[VideoSplash] Play error:', error);
       setDebugInfo(`Play error: ${error.message}`);
       setHasError(true);
-    });
+    }
   };
 
   const handleReadyForDisplay = () => {
@@ -86,23 +98,26 @@ export default function VideoSplashScreen({ onComplete }: VideoSplashScreenProps
         style={styles.video}
         source={require('../assets/splash-video.mp4')}
         resizeMode={ResizeMode.COVER}
-        shouldPlay
+        shouldPlay={true}
         isLooping={false}
+        isMuted={false}
+        volume={1.0}
+        rate={1.0}
         onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
         onError={handleError}
         onLoad={handleLoad}
         onReadyForDisplay={handleReadyForDisplay}
         useNativeControls={false}
-        isMuted={false}
+        posterSource={require('../assets/celik.fix.badge.png')}
+        posterStyle={styles.poster}
+        usePoster={true}
       />
-      {__DEV__ && (
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugText}>Platform: {Platform.OS}</Text>
-          <Text style={styles.debugText}>Status: {debugInfo}</Text>
-          <Text style={styles.debugText}>Loaded: {videoLoaded ? 'Yes' : 'No'}</Text>
-          <Text style={styles.debugText}>Error: {hasError ? 'Yes' : 'No'}</Text>
-        </View>
-      )}
+      <View style={styles.debugContainer}>
+        <Text style={styles.debugText}>Platform: {Platform.OS}</Text>
+        <Text style={styles.debugText}>Status: {debugInfo}</Text>
+        <Text style={styles.debugText}>Loaded: {videoLoaded ? 'Yes' : 'No'}</Text>
+        <Text style={styles.debugText}>Error: {hasError ? 'Yes' : 'No'}</Text>
+      </View>
     </View>
   );
 }
@@ -116,6 +131,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  poster: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+  },
   debugContainer: {
     position: 'absolute',
     bottom: 50,
@@ -124,10 +144,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.7)',
     padding: 10,
     borderRadius: 8,
+    zIndex: 1000,
   },
   debugText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 4,
+    fontWeight: 'bold',
   },
 });
