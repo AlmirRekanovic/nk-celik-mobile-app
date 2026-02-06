@@ -12,49 +12,26 @@ export default function VideoSplashScreen({ onComplete }: VideoSplashScreenProps
   const [hasError, setHasError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [debugInfo, setDebugInfo] = useState('Initializing...');
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     SplashScreen.hideAsync();
-    console.log('[VideoSplash] Component mounted');
-
-    timeoutRef.current = setTimeout(() => {
-      console.log('[VideoSplash] Timeout reached (15s) - completing splash');
-      setDebugInfo('Timeout - skipping video');
-      onComplete();
-    }, 15000);
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [onComplete]);
+    console.log('[VideoSplash] Component mounted - video will loop until app ready');
+    setDebugInfo('Loading app...');
+  }, []);
 
   useEffect(() => {
     if (hasError) {
-      console.log('[VideoSplash] Error detected - completing splash');
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      onComplete();
+      console.log('[VideoSplash] Error detected - showing fallback');
+      setDebugInfo('Video error - waiting for app...');
     }
-  }, [hasError, onComplete]);
+  }, [hasError]);
 
   const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
     if (status.isLoaded) {
       if (!videoLoaded) {
-        console.log('[VideoSplash] Video loaded successfully');
+        console.log('[VideoSplash] Video loaded and looping');
         setVideoLoaded(true);
-        setDebugInfo('Video playing...');
-      }
-
-      if (status.didJustFinish) {
-        console.log('[VideoSplash] Video finished - completing splash');
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        onComplete();
+        setDebugInfo('Video looping - loading app...');
       }
     }
   };
@@ -67,17 +44,17 @@ export default function VideoSplashScreen({ onComplete }: VideoSplashScreenProps
 
   const handleLoad = async () => {
     console.log('[VideoSplash] Video onLoad triggered');
-    setDebugInfo('Video loaded, starting playback...');
+    setDebugInfo('Video loaded, starting loop...');
 
     try {
       if (video.current) {
         await video.current.setStatusAsync({
           shouldPlay: true,
-          isLooping: false,
+          isLooping: true,
           isMuted: false,
           volume: 1.0,
         });
-        console.log('[VideoSplash] Video playback started');
+        console.log('[VideoSplash] Video looping started');
       }
     } catch (error: any) {
       console.error('[VideoSplash] Play error:', error);
@@ -99,7 +76,7 @@ export default function VideoSplashScreen({ onComplete }: VideoSplashScreenProps
         source={require('../assets/splash-video.mp4')}
         resizeMode={ResizeMode.COVER}
         shouldPlay={true}
-        isLooping={false}
+        isLooping={true}
         isMuted={false}
         volume={1.0}
         rate={1.0}
