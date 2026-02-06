@@ -14,35 +14,39 @@ SplashScreen.preventAutoHideAsync();
 function AppContent() {
   const { loading: authLoading } = useAuth();
   const { initialized: newsInitialized } = useNews();
-  const [forceReady, setForceReady] = useState(false);
-
-  useEffect(() => {
-    console.log('[AppContent] Auth loading:', authLoading, 'News initialized:', newsInitialized);
-  }, [authLoading, newsInitialized]);
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
     registerBackgroundFetch();
-
-    const timeout = setTimeout(() => {
-      console.warn('[AppContent] App initialization timeout - forcing ready state');
-      setForceReady(true);
-    }, 3000);
-
-    return () => clearTimeout(timeout);
   }, []);
 
-  const isReady = forceReady || (!authLoading && newsInitialized);
+  useEffect(() => {
+    const isReady = !authLoading && newsInitialized;
 
-  console.log('[AppContent] Render - isReady:', isReady, 'authLoading:', authLoading, 'newsInitialized:', newsInitialized, 'forceReady:', forceReady);
+    if (isReady && !appReady) {
+      setAppReady(true);
+      SplashScreen.hideAsync().catch(err => {
+        console.error('Error hiding splash screen:', err);
+      });
+    }
+  }, [authLoading, newsInitialized, appReady]);
 
   useEffect(() => {
-    if (isReady) {
-      SplashScreen.hideAsync();
-    }
-  }, [isReady]);
+    const forceHideTimer = setTimeout(() => {
+      if (!appReady) {
+        console.warn('[AppContent] Forcing app ready after timeout');
+        setAppReady(true);
+        SplashScreen.hideAsync().catch(err => {
+          console.error('Error hiding splash screen:', err);
+        });
+      }
+    }, 5000);
 
-  if (!isReady) {
-    return <LoadingScreen />;
+    return () => clearTimeout(forceHideTimer);
+  }, [appReady]);
+
+  if (!appReady) {
+    return null;
   }
 
   return (
