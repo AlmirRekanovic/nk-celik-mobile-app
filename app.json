@@ -10,8 +10,8 @@
     "runtimeVersion": "1.0.0",
     "icon": "./assets/celik.fix.badge.png",
     "splash": {
-      "image": "./assets/celik.fix.badge.png",
-      "resizeMode": "contain",
+      "image": "./assets/splashscreen.png",
+      "resizeMode": "cover",
       "backgroundColor": "#000000"
     },
     "updates": {
