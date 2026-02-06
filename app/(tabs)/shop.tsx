@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useState, useEffect } from 'react';
 import { fetchProducts } from '@/services/woocommerce';
 import { Product } from '@/types/products';
@@ -20,6 +21,7 @@ import { getCachedProducts, setCachedProducts } from '@/services/storage';
 
 export default function ShopScreen() {
   const { member, isGuest } = useAuth();
+  const { isDarkMode } = useTheme();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -79,13 +81,18 @@ export default function ShopScreen() {
     loadProducts(true);
   };
 
+  const backgroundColor = isDarkMode ? '#000000' : '#F9FAFB';
+  const cardBg = isDarkMode ? '#1F2937' : '#FFFFFF';
+  const textColor = isDarkMode ? '#F9FAFB' : '#111827';
+  const subtextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+
   const openProduct = (url: string) => {
     Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err));
   };
 
   const renderProduct = ({ item }: { item: Product }) => (
     <TouchableOpacity
-      style={styles.productCard}
+      style={[styles.productCard, { backgroundColor: cardBg }]}
       onPress={() => openProduct(item.permalink)}
       activeOpacity={0.7}
     >
@@ -93,11 +100,11 @@ export default function ShopScreen() {
         <Image source={{ uri: item.imageUrl }} style={styles.productImage} resizeMode="cover" />
       )}
       <View style={styles.productContent}>
-        <Text style={styles.productName} numberOfLines={2}>
+        <Text style={[styles.productName, { color: textColor }]} numberOfLines={2}>
           {item.name}
         </Text>
         {item.shortDescription ? (
-          <Text style={styles.productDescription} numberOfLines={3}>
+          <Text style={[styles.productDescription, { color: subtextColor }]} numberOfLines={3}>
             {item.shortDescription.replace(/<[^>]*>/g, '')}
           </Text>
         ) : null}
@@ -128,22 +135,22 @@ export default function ShopScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
+      <View style={[styles.container, { backgroundColor }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Prodavnica</Text>
         </View>
-        <View style={styles.loadingContainer}>
+        <View style={[styles.loadingContainer, { backgroundColor }]}>
           <ActivityIndicator size="large" color="#D4AF37" />
-          <Text style={styles.loadingText}>Učitavanje proizvoda...</Text>
+          <Text style={[styles.loadingText, { color: subtextColor }]}>Učitavanje proizvoda...</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor }]}>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
@@ -175,7 +182,7 @@ export default function ShopScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#DC2626']} />}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Nema dostupnih proizvoda</Text>
+              <Text style={[styles.emptyText, { color: subtextColor }]}>Nema dostupnih proizvoda</Text>
             </View>
           }
         />

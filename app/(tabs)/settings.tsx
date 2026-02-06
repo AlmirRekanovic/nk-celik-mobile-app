@@ -11,16 +11,18 @@ import {
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { AppSettings } from '@/types/news';
 import { getSettings, setSettings, getLastSyncTime } from '@/services/storage';
 import { DEFAULT_PAGE_SIZE } from '@/constants/config';
-import { LogOut, UserCog, LogIn, Bell } from '@/components/Icons';
+import { LogOut, UserCog, LogIn, Bell, Moon, Sun } from '@/components/Icons';
 import AdBanner from '@/components/AdBanner';
 import { getNotificationPreference, updateNotificationPreference } from '@/services/notifications';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { member, isGuest, signOut } = useAuth();
+  const { theme, toggleTheme, isDarkMode } = useTheme();
   const [settings, setSettingsState] = useState<AppSettings>({
     backgroundRefreshEnabled: true,
     postsPerPage: DEFAULT_PAGE_SIZE,
@@ -98,10 +100,17 @@ export default function SettingsScreen() {
     router.replace('/auth/login');
   };
 
+  const backgroundColor = isDarkMode ? '#000000' : '#F9FAFB';
+  const headerBg = '#000000';
+  const cardBg = isDarkMode ? '#1F2937' : '#FFFFFF';
+  const textColor = isDarkMode ? '#F9FAFB' : '#1F2937';
+  const subtextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+  const borderColor = isDarkMode ? '#374151' : '#E5E7EB';
+
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor }]}>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+      <View style={[styles.header, { backgroundColor: headerBg }]}>
         <Text style={styles.headerTitle}>Postavke</Text>
         {member && (
           <Text style={styles.headerSubtitle}>
@@ -115,9 +124,28 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.content}>
+        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+          <Text style={[styles.sectionTitle, { color: subtextColor }]}>Izgled</Text>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={[styles.settingLabel, { color: textColor }]}>Tamni način rada</Text>
+              <Text style={[styles.settingDescription, { color: subtextColor }]}>
+                Uključi tamnu temu za lakše gledanje noću
+              </Text>
+            </View>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#D1D5DB', true: '#FFE8A1' }}
+              thumbColor={isDarkMode ? '#D4AF37' : '#F3F4F6'}
+            />
+          </View>
+        </View>
+
         {member && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Korisnički račun</Text>
+          <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+            <Text style={[styles.sectionTitle, { color: subtextColor }]}>Korisnički račun</Text>
 
             {member.is_admin && (
               <TouchableOpacity
@@ -138,8 +166,8 @@ export default function SettingsScreen() {
         )}
 
         {isGuest && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Korisnički račun</Text>
+          <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+            <Text style={[styles.sectionTitle, { color: subtextColor }]}>Korisnički račun</Text>
 
             <View style={styles.guestInfoCard}>
               <Text style={styles.guestInfoText}>
@@ -158,13 +186,13 @@ export default function SettingsScreen() {
         )}
 
         {member && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Obavještenja</Text>
+          <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+            <Text style={[styles.sectionTitle, { color: subtextColor }]}>Obavještenja</Text>
 
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Push obavještenja</Text>
-                <Text style={styles.settingDescription}>
+                <Text style={[styles.settingLabel, { color: textColor }]}>Push obavještenja</Text>
+                <Text style={[styles.settingDescription, { color: subtextColor }]}>
                   Primaj obavještenja o novim vijestima i anketama
                 </Text>
               </View>
@@ -178,13 +206,13 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Osvježavanje</Text>
+        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+          <Text style={[styles.sectionTitle, { color: subtextColor }]}>Osvježavanje</Text>
 
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Automatsko osvježavanje</Text>
-              <Text style={styles.settingDescription}>
+              <Text style={[styles.settingLabel, { color: textColor }]}>Automatsko osvježavanje</Text>
+              <Text style={[styles.settingDescription, { color: subtextColor }]}>
                 Osvježava vijesti u pozadini svakih ~10 minuta
               </Text>
             </View>
@@ -196,14 +224,14 @@ export default function SettingsScreen() {
             />
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Zadnje osvježavanje:</Text>
-            <Text style={styles.infoValue}>{formatLastSync()}</Text>
+          <View style={[styles.infoRow, { borderTopColor: borderColor }]}>
+            <Text style={[styles.infoLabel, { color: subtextColor }]}>Zadnje osvježavanje:</Text>
+            <Text style={[styles.infoValue, { color: textColor }]}>{formatLastSync()}</Text>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Broj vijesti za prikaz</Text>
+        <View style={[styles.section, { backgroundColor: cardBg, borderColor }]}>
+          <Text style={[styles.sectionTitle, { color: subtextColor }]}>Broj vijesti za prikaz</Text>
 
           {[20, 50, 100].map((value) => (
             <TouchableOpacity
@@ -213,18 +241,18 @@ export default function SettingsScreen() {
               <View style={styles.radio}>
                 {settings.postsPerPage === value && <View style={styles.radioSelected} />}
               </View>
-              <Text style={styles.radioLabel}>{value} vijesti</Text>
+              <Text style={[styles.radioLabel, { color: textColor }]}>{value} vijesti</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <View style={styles.adContainer}>
+        <View style={[styles.adContainer, { backgroundColor: cardBg, borderColor }]}>
           <AdBanner size="large" />
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>NK Čelik Novosti</Text>
-          <Text style={styles.footerSubtext}>
+          <Text style={[styles.footerText, { color: textColor }]}>NK Čelik Novosti</Text>
+          <Text style={[styles.footerSubtext, { color: subtextColor }]}>
             Aplikacija za praćenje vijesti Nogometnog kluba Čelik Zenica
           </Text>
           <Text style={styles.footerCredit}>Created by Reka</Text>

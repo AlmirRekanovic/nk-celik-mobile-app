@@ -13,11 +13,13 @@ import {
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Mail, Lock } from '@/components/Icons';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { loginWithPassword, continueAsGuest } = useAuth();
+  const { isDarkMode } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,6 +50,17 @@ export default function LoginScreen() {
     router.replace('/(tabs)');
   };
 
+  const formBg = isDarkMode ? '#1F2937' : '#FFFFFF';
+  const textColor = isDarkMode ? '#F9FAFB' : '#1F2937';
+  const subtextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+  const inputBg = isDarkMode ? '#374151' : '#F9FAFB';
+  const inputBorder = isDarkMode ? '#4B5563' : '#E5E7EB';
+  const inputText = isDarkMode ? '#F9FAFB' : '#1F2937';
+  const dividerColor = isDarkMode ? '#4B5563' : '#E5E7EB';
+  const guestBtnBg = isDarkMode ? '#374151' : '#F3F4F6';
+  const guestBtnBorder = isDarkMode ? '#4B5563' : '#E5E7EB';
+  const guestBtnText = isDarkMode ? '#F9FAFB' : '#1F2937';
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -61,17 +74,17 @@ export default function LoginScreen() {
           <Text style={styles.appSubtitle}>Mobilna Aplikacija</Text>
         </View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Prijava člana</Text>
-          <Text style={styles.subtitle}>
+        <View style={[styles.formContainer, { backgroundColor: formBg }]}>
+          <Text style={[styles.title, { color: textColor }]}>Prijava člana</Text>
+          <Text style={[styles.subtitle, { color: subtextColor }]}>
             Prijavite se sa Vašim email-om i članskim brojem
           </Text>
 
           <View style={styles.inputGroup}>
-            <View style={styles.inputWrapper}>
-              <Mail size={20} color="#6B7280" style={styles.inputIcon} />
+            <View style={[styles.inputWrapper, { backgroundColor: inputBg, borderColor: inputBorder }]}>
+              <Mail size={20} color={subtextColor} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: inputText }]}
                 placeholder="Email adresa"
                 placeholderTextColor="#9CA3AF"
                 value={email}
@@ -83,10 +96,10 @@ export default function LoginScreen() {
               />
             </View>
 
-            <View style={styles.inputWrapper}>
-              <Lock size={20} color="#6B7280" style={styles.inputIcon} />
+            <View style={[styles.inputWrapper, { backgroundColor: inputBg, borderColor: inputBorder }]}>
+              <Lock size={20} color={subtextColor} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: inputText }]}
                 placeholder="Lozinka (članski broj)"
                 placeholderTextColor="#9CA3AF"
                 value={password}
@@ -111,19 +124,19 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ili</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: dividerColor }]} />
+            <Text style={[styles.dividerText, { color: subtextColor }]}>ili</Text>
+            <View style={[styles.dividerLine, { backgroundColor: dividerColor }]} />
           </View>
 
           <TouchableOpacity
-            style={styles.guestButton}
+            style={[styles.guestButton, { backgroundColor: guestBtnBg, borderColor: guestBtnBorder }]}
             onPress={handleGuestMode}
             disabled={loading}>
-            <Text style={styles.guestButtonText}>Nastavi kao gost</Text>
+            <Text style={[styles.guestButtonText, { color: guestBtnText }]}>Nastavi kao gost</Text>
           </TouchableOpacity>
 
-          <Text style={styles.infoText}>
+          <Text style={[styles.infoText, { color: isDarkMode ? '#6B7280' : '#9CA3AF' }]}>
             Kao gost možete pregledati vijesti i glasati na anketama, ali nećete moći koristiti sve
             funkcionalnosti aplikacije.
           </Text>

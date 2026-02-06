@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { checkInTicket } from '@/services/tickets';
 import { Ticket } from '@/types/products';
 import { Camera, X, CheckCircle, XCircle, AlertCircle } from '@/components/Icons';
@@ -24,22 +25,27 @@ type ScanResult = {
 
 export default function CheckInScreen() {
   const { member, isGuest } = useAuth();
+  const { isDarkMode } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
 
+  const backgroundColor = isDarkMode ? '#000000' : '#F9FAFB';
+  const textColor = isDarkMode ? '#F9FAFB' : '#111827';
+  const subtextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+
   if (!member?.is_admin) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
+      <View style={[styles.container, { backgroundColor }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Check-in</Text>
         </View>
         <View style={styles.errorContainer}>
           <AlertCircle size={48} color="#DC2626" />
-          <Text style={styles.errorTitle}>Nemate pristup</Text>
-          <Text style={styles.errorText}>
+          <Text style={[styles.errorTitle, { color: textColor }]}>Nemate pristup</Text>
+          <Text style={[styles.errorText, { color: subtextColor }]}>
             Samo administratori mogu skenirati karte.
           </Text>
         </View>
@@ -49,13 +55,13 @@ export default function CheckInScreen() {
 
   if (!permission) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
+      <View style={[styles.container, { backgroundColor }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Check-in</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#DC2626" />
+          <ActivityIndicator size="large" color="#D4AF37" />
         </View>
       </View>
     );
@@ -63,8 +69,8 @@ export default function CheckInScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
+      <View style={[styles.container, { backgroundColor }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Check-in</Text>
           {member && (
@@ -75,8 +81,8 @@ export default function CheckInScreen() {
         </View>
         <View style={styles.permissionContainer}>
           <Camera size={64} color="#D4AF37" />
-          <Text style={styles.permissionTitle}>Dozvola za kameru</Text>
-          <Text style={styles.permissionText}>
+          <Text style={[styles.permissionTitle, { color: textColor }]}>Dozvola za kameru</Text>
+          <Text style={[styles.permissionText, { color: subtextColor }]}>
             Potrebna je dozvola za kameru kako biste mogli skenirati QR kodove.
           </Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
@@ -128,8 +134,8 @@ export default function CheckInScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor }]}>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Check-in</Text>
         {member && (
@@ -142,8 +148,8 @@ export default function CheckInScreen() {
       {!scanning ? (
         <View style={styles.startContainer}>
           <Camera size={80} color="#D4AF37" />
-          <Text style={styles.startTitle}>Spremno za skeniranje</Text>
-          <Text style={styles.startText}>
+          <Text style={[styles.startTitle, { color: textColor }]}>Spremno za skeniranje</Text>
+          <Text style={[styles.startText, { color: subtextColor }]}>
             Pritisnite dugme ispod da započnete skeniranje QR kodova na kartama.
           </Text>
           <TouchableOpacity style={styles.scanButton} onPress={startScanning}>

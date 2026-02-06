@@ -17,6 +17,7 @@ import { ArrowLeft } from '@/components/Icons';
 import { NewsItem } from '@/types/news';
 import { fetchPostById } from '@/services/wordpress';
 import { useNews } from '@/contexts/NewsContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import OptimizedImage from '@/components/OptimizedImage';
 import AdBanner from '@/components/AdBanner';
 
@@ -25,6 +26,7 @@ export default function NewsDetailScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { posts } = useNews();
+  const { isDarkMode } = useTheme();
   const [post, setPost] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -84,20 +86,83 @@ export default function NewsDetailScreen() {
     });
   };
 
+  const backgroundColor = isDarkMode ? '#000000' : '#FFFFFF';
+  const textColor = isDarkMode ? '#F9FAFB' : '#1F2937';
+  const subtextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+  const borderColor = isDarkMode ? '#374151' : '#E5E7EB';
+
+  const dynamicTagsStyles = {
+    body: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: textColor,
+    },
+    p: {
+      marginBottom: 16,
+      color: textColor,
+    },
+    h1: {
+      fontSize: 28,
+      fontWeight: '700' as const,
+      color: textColor,
+      marginTop: 24,
+      marginBottom: 16,
+    },
+    h2: {
+      fontSize: 24,
+      fontWeight: '700' as const,
+      color: textColor,
+      marginTop: 20,
+      marginBottom: 12,
+    },
+    h3: {
+      fontSize: 20,
+      fontWeight: '700' as const,
+      color: textColor,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    a: {
+      color: '#D4AF37',
+      textDecorationLine: 'underline' as const,
+    },
+    ul: {
+      marginBottom: 16,
+    },
+    ol: {
+      marginBottom: 16,
+    },
+    li: {
+      marginBottom: 8,
+      color: textColor,
+    },
+    strong: {
+      fontWeight: '700' as const,
+      color: textColor,
+    },
+    em: {
+      fontStyle: 'italic' as const,
+      color: textColor,
+    },
+    img: {
+      marginVertical: 16,
+    },
+  };
+
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <StatusBar style="dark" />
-        <ActivityIndicator size="large" color="#DC2626" />
+      <View style={[styles.centerContainer, { backgroundColor }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+        <ActivityIndicator size="large" color="#D4AF37" />
       </View>
     );
   }
 
   if (error || !post) {
     return (
-      <View style={styles.centerContainer}>
-        <StatusBar style="dark" />
-        <Text style={styles.errorText}>Greška pri učitavanju vijesti</Text>
+      <View style={[styles.centerContainer, { backgroundColor }]}>
+        <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+        <Text style={[styles.errorText, { color: subtextColor }]}>Greška pri učitavanju vijesti</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Nazad</Text>
         </TouchableOpacity>
@@ -106,7 +171,7 @@ export default function NewsDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor }]}>
       <StatusBar style="light" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
@@ -128,17 +193,17 @@ export default function NewsDetailScreen() {
         )}
 
         <View style={styles.content}>
-          <Text style={styles.title}>{post.title}</Text>
+          <Text style={[styles.title, { color: textColor }]}>{post.title}</Text>
 
-          <View style={styles.metadata}>
-            <Text style={styles.date}>
+          <View style={[styles.metadata, { borderBottomColor: borderColor }]}>
+            <Text style={[styles.date, { color: subtextColor }]}>
               {formatDate(post.publishedAt)} u {formatTime(post.publishedAt)}
             </Text>
             {post.authorName && (
-              <Text style={styles.author}>Autor: {post.authorName}</Text>
+              <Text style={[styles.author, { color: subtextColor }]}>Autor: {post.authorName}</Text>
             )}
             {post.updatedAt !== post.publishedAt && (
-              <Text style={styles.updated}>
+              <Text style={[styles.updated, { color: isDarkMode ? '#6B7280' : '#9CA3AF' }]}>
                 Ažurirano: {formatDate(post.updatedAt)} u {formatTime(post.updatedAt)}
               </Text>
             )}
@@ -149,7 +214,7 @@ export default function NewsDetailScreen() {
           <RenderHtml
             contentWidth={width - 32}
             source={{ html: post.contentHtml }}
-            tagsStyles={tagsStyles}
+            tagsStyles={dynamicTagsStyles}
             renderersProps={{
               a: {
                 onPress: (event, href) => {
@@ -165,60 +230,6 @@ export default function NewsDetailScreen() {
     </View>
   );
 }
-
-const tagsStyles = {
-  body: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#1F2937',
-  },
-  p: {
-    marginBottom: 16,
-  },
-  h1: {
-    fontSize: 28,
-    fontWeight: '700' as const,
-    color: '#1F2937',
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  h2: {
-    fontSize: 24,
-    fontWeight: '700' as const,
-    color: '#1F2937',
-    marginTop: 20,
-    marginBottom: 12,
-  },
-  h3: {
-    fontSize: 20,
-    fontWeight: '700' as const,
-    color: '#1F2937',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  a: {
-    color: '#DC2626',
-    textDecorationLine: 'underline' as const,
-  },
-  ul: {
-    marginBottom: 16,
-  },
-  ol: {
-    marginBottom: 16,
-  },
-  li: {
-    marginBottom: 8,
-  },
-  strong: {
-    fontWeight: '700' as const,
-  },
-  em: {
-    fontStyle: 'italic' as const,
-  },
-  img: {
-    marginVertical: 16,
-  },
-};
 
 const styles = StyleSheet.create({
   container: {
