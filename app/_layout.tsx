@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { registerBackgroundFetch } from '@/services/backgroundFetch';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { NewsProvider, useNews } from '@/contexts/NewsContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import LoadingScreen from '@/components/LoadingScreen';
+
+SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
   const { loading: authLoading } = useAuth();
@@ -31,6 +34,12 @@ function AppContent() {
   const isReady = forceReady || (!authLoading && newsInitialized);
 
   console.log('[AppContent] Render - isReady:', isReady, 'authLoading:', authLoading, 'newsInitialized:', newsInitialized, 'forceReady:', forceReady);
+
+  useEffect(() => {
+    if (isReady) {
+      SplashScreen.hideAsync();
+    }
+  }, [isReady]);
 
   if (!isReady) {
     return <LoadingScreen />;
