@@ -57,6 +57,15 @@ export default function RootLayout() {
   useFrameworkReady();
   const [showVideoSplash, setShowVideoSplash] = useState(true);
 
+  useEffect(() => {
+    const splashTimer = setTimeout(() => {
+      console.log('[RootLayout] Hiding video splash after 5 seconds');
+      setShowVideoSplash(false);
+    }, 5000);
+
+    return () => clearTimeout(splashTimer);
+  }, []);
+
   const handleVideoComplete = () => {
     setShowVideoSplash(false);
   };
