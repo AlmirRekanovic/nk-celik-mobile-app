@@ -221,3 +221,79 @@ export async function fetchTicketCheckIns(ticketId: string) {
     return [];
   }
 }
+
+export async function deleteTicket(ticketId: string): Promise<boolean> {
+  try {
+    const { error: checkInsError } = await supabase
+      .from('ticket_checkins')
+      .delete()
+      .eq('ticket_id', ticketId);
+
+    if (checkInsError) {
+      console.error('Error deleting check-ins:', checkInsError);
+      return false;
+    }
+
+    const { error: ticketError } = await supabase
+      .from('tickets')
+      .delete()
+      .eq('id', ticketId);
+
+    if (ticketError) {
+      console.error('Error deleting ticket:', ticketError);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting ticket:', error);
+    return false;
+  }
+}
+
+export async function deleteUsedTickets(memberId: string): Promise<number> {
+  try {
+    const { data: usedTickets, error: fetchError } = await supabase
+      .from('tickets')
+      .select('id')
+      .eq('member_id', memberId)
+      .eq('status', 'used');
+
+    if (fetchError || !usedTickets) {
+      console.error('Error fetching used tickets:', fetchError);
+      return 0;
+    }
+
+    if (usedTickets.length === 0) {
+      return 0;
+    }
+
+    const ticketIds = usedTickets.map(t => t.id);
+
+    const { error: checkInsError } = await supabase
+      .from('ticket_checkins')
+      .delete()
+      .in('ticket_id', ticketIds);
+
+    if (checkInsError) {
+      console.error('Error deleting check-ins:', checkInsError);
+      return 0;
+    }
+
+    const { error: ticketsError } = await supabase
+      .from('tickets')
+      .delete()
+      .eq('member_id', memberId)
+      .eq('status', 'used');
+
+    if (ticketsError) {
+      console.error('Error deleting used tickets:', ticketsError);
+      return 0;
+    }
+
+    return usedTickets.length;
+  } catch (error) {
+    console.error('Error deleting used tickets:', error);
+    return 0;
+  }
+}

@@ -8,14 +8,15 @@ import {
   TouchableOpacity,
   RefreshControl,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useState, useEffect } from 'react';
-import { fetchMemberTickets } from '@/services/tickets';
+import { fetchMemberTickets, deleteTicket, deleteUsedTickets } from '@/services/tickets';
 import { Ticket } from '@/types/products';
-import { Ticket as TicketIcon, Calendar, Clock } from '@/components/Icons';
+import { Ticket as TicketIcon, Calendar, Trash2 } from '@/components/Icons';
 import QRCode from 'react-native-qrcode-svg';
 
 export default function KarteScreen() {
@@ -58,6 +59,66 @@ export default function KarteScreen() {
 
   const toggleTicket = (ticketId: string) => {
     setExpandedTicketId(expandedTicketId === ticketId ? null : ticketId);
+  };
+
+  const handleDeleteTicket = (ticketId: string) => {
+    Alert.alert(
+      'Obriši kartu',
+      'Da li ste sigurni da želite obrisati ovu kartu?',
+      [
+        {
+          text: 'Otkaži',
+          style: 'cancel',
+        },
+        {
+          text: 'Obriši',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await deleteTicket(ticketId);
+            if (success) {
+              setTickets(prev => prev.filter(t => t.id !== ticketId));
+              Alert.alert('Uspjeh', 'Karta je obrisana');
+            } else {
+              Alert.alert('Greška', 'Nije moguće obrisati kartu');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAllUsed = () => {
+    const usedCount = tickets.filter(t => t.status === 'used').length;
+
+    if (usedCount === 0) {
+      Alert.alert('Info', 'Nemate iskorištenih karata za brisanje');
+      return;
+    }
+
+    Alert.alert(
+      'Obriši sve iskorištene karte',
+      `Da li ste sigurni da želite obrisati ${usedCount} ${usedCount === 1 ? 'iskorištenu kartu' : 'iskorištenih karata'}?`,
+      [
+        {
+          text: 'Otkaži',
+          style: 'cancel',
+        },
+        {
+          text: 'Obriši sve',
+          style: 'destructive',
+          onPress: async () => {
+            if (!member) return;
+            const deletedCount = await deleteUsedTickets(member.id);
+            if (deletedCount > 0) {
+              setTickets(prev => prev.filter(t => t.status !== 'used'));
+              Alert.alert('Uspjeh', `Obrisano ${deletedCount} ${deletedCount === 1 ? 'karta' : 'karata'}`);
+            } else {
+              Alert.alert('Greška', 'Nije moguće obrisati karte');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const formatDate = (dateString: string | null) => {
@@ -148,6 +209,13 @@ export default function KarteScreen() {
               <Text style={[styles.detailLabel, { color: subtextColor }]}>Naručilac:</Text>
               <Text style={[styles.detailValue, { color: textColor }]}>{item.customer_name}</Text>
             </View>
+            <TouchableOpacity
+              style={[styles.deleteButton, { backgroundColor: isDarkMode ? '#7F1D1D' : '#FEE2E2' }]}
+              onPress={() => handleDeleteTicket(item.id)}
+            >
+              <Trash2 size={18} color={isDarkMode ? '#FCA5A5' : '#DC2626'} />
+              <Text style={[styles.deleteButtonText, { color: isDarkMode ? '#FCA5A5' : '#DC2626' }]}>Obriši kartu</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -193,7 +261,7 @@ export default function KarteScreen() {
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>Moje Karte</Text>
             {member && (
               <Text style={styles.headerSubtitle}>
@@ -203,11 +271,19 @@ export default function KarteScreen() {
           </View>
           <TicketIcon size={28} color="#FFFFFF" />
         </View>
-        <Text style={styles.headerDescription}>
-          {tickets.length > 0
-            ? `Imate ${tickets.length} ${tickets.length === 1 ? 'kartu' : 'karte/karata'}`
-            : 'Nemate kupljenih karata'}
-        </Text>
+        <View style={styles.headerBottom}>
+          <Text style={styles.headerDescription}>
+            {tickets.length > 0
+              ? `Imate ${tickets.length} ${tickets.length === 1 ? 'kartu' : 'karte/karata'}`
+              : 'Nemate kupljenih karata'}
+          </Text>
+          {tickets.some(t => t.status === 'used') && (
+            <TouchableOpacity style={styles.deleteAllButton} onPress={handleDeleteAllUsed}>
+              <Trash2 size={16} color="#DC2626" />
+              <Text style={styles.deleteAllButtonText}>Obriši iskorištene</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {error ? (
@@ -256,6 +332,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  headerLeft: {
+    flex: 1,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -266,10 +345,30 @@ const styles = StyleSheet.create({
     color: '#FEE2E2',
     marginTop: 4,
   },
+  headerBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
   headerDescription: {
     fontSize: 14,
     color: '#FEE2E2',
-    marginTop: 4,
+    flex: 1,
+  },
+  deleteAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  deleteAllButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#DC2626',
   },
   loadingContainer: {
     flex: 1,
@@ -425,5 +524,21 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'center',
     marginTop: 8,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#FEE2E2',
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#DC2626',
   },
 });
