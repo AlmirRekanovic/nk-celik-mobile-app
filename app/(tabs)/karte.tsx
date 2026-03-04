@@ -74,7 +74,8 @@ export default function KarteScreen() {
           text: 'Obriši',
           style: 'destructive',
           onPress: async () => {
-            const success = await deleteTicket(ticketId);
+            if (!member) return;
+            const success = await deleteTicket(ticketId, member.id);
             if (success) {
               setTickets(prev => prev.filter(t => t.id !== ticketId));
               Alert.alert('Uspjeh', 'Karta je obrisana');

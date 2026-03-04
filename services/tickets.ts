@@ -23,6 +23,8 @@ export async function fetchTicketByCode(ticketCode: string): Promise<Ticket | nu
 
 export async function fetchMemberTickets(memberId: string): Promise<Ticket[]> {
   try {
+    await supabase.rpc('set_member_context', { member_id: memberId });
+
     const { data, error } = await supabase
       .from('tickets')
       .select('*')
@@ -222,8 +224,10 @@ export async function fetchTicketCheckIns(ticketId: string) {
   }
 }
 
-export async function deleteTicket(ticketId: string): Promise<boolean> {
+export async function deleteTicket(ticketId: string, memberId: string): Promise<boolean> {
   try {
+    await supabase.rpc('set_member_context', { member_id: memberId });
+
     const { error: checkInsError } = await supabase
       .from('ticket_checkins')
       .delete()
@@ -253,6 +257,8 @@ export async function deleteTicket(ticketId: string): Promise<boolean> {
 
 export async function deleteUsedTickets(memberId: string): Promise<number> {
   try {
+    await supabase.rpc('set_member_context', { member_id: memberId });
+
     const { data: usedTickets, error: fetchError } = await supabase
       .from('tickets')
       .select('id')
