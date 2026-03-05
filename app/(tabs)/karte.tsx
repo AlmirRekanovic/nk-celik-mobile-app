@@ -202,10 +202,12 @@ export default function KarteScreen() {
         {isExpanded && (
           <View style={[styles.ticketExpanded, { borderTopColor: borderColor }]}>
             <View style={styles.qrContainer}>
-              <QRCode value={item.order_id.toString()} size={200} backgroundColor="#FFFFFF" />
+              <QRCode value={item.ticket_code} size={200} backgroundColor="#FFFFFF" />
             </View>
             <Text style={styles.qrLabel}>Skeniraj QR kod na ulazu</Text>
             <View style={[styles.ticketDetails, { backgroundColor: isDarkMode ? '#374151' : '#F9FAFB' }]}>
+              <Text style={[styles.detailLabel, { color: subtextColor }]}>Broj karte:</Text>
+              <Text style={[styles.detailValue, { color: textColor }]}>{item.ticket_code}</Text>
               <Text style={[styles.detailLabel, { color: subtextColor }]}>Broj narudžbe:</Text>
               <Text style={[styles.detailValue, { color: textColor }]}>{item.order_id}</Text>
               {item.event_name && (
