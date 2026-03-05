@@ -18,7 +18,7 @@ import { ChatMessage } from '@/types/chat';
 import { Trash2, Send } from '@/components/Icons';
 
 export default function ChatScreen() {
-  const { user } = useAuth();
+  const { member: user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
