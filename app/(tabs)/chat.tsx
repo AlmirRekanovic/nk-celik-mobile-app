@@ -57,13 +57,16 @@ export default function ChatScreen() {
   const handleSend = async () => {
     if (!newMessage.trim() || !user || sending) return;
 
+    console.log('Sending message:', { message: newMessage, userId: user.id });
     setSending(true);
     try {
-      await chatService.sendMessage(newMessage, user.id);
+      const result = await chatService.sendMessage(newMessage, user.id);
+      console.log('Message sent successfully:', result);
       setNewMessage('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send message:', error);
-      Alert.alert('Greška', 'Nije moguće poslati poruku');
+      console.error('Error details:', error?.message, error?.details, error?.hint);
+      Alert.alert('Greška', `Nije moguće poslati poruku: ${error?.message || 'Unknown error'}`);
     } finally {
       setSending(false);
     }
