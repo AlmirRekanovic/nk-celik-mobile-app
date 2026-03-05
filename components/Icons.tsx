@@ -249,3 +249,10 @@ export const MessageCircle = ({ size = 24, color = '#000', strokeWidth = 2, styl
     <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
+
+export const Send = ({ size = 24, color = '#000', strokeWidth = 2, style }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
+    <Line x1={22} y1={2} x2={11} y2={13} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    <Polyline points="22 2 15 22 11 13 2 9 22 2" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+  </Svg>
+);

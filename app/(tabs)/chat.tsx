@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { chatService } from '@/services/chat';
 import { ChatMessage } from '@/types/chat';
-import { Send, Trash2 } from 'lucide-react-native';
+import { Trash2, Send } from '@/components/Icons';
 
 export default function ChatScreen() {
   const { user } = useAuth();
