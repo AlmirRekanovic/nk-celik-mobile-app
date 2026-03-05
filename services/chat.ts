@@ -35,18 +35,35 @@ export const chatService = {
   },
 
   async deleteMessage(messageId: string, memberId: string): Promise<void> {
-    await supabase.rpc('set_member_context', { member_id: memberId });
+    const { error: contextError } = await supabase.rpc('set_member_context', {
+      member_id: memberId
+    });
+
+    if (contextError) {
+      console.error('Failed to set member context:', contextError);
+      throw contextError;
+    }
 
     const { error } = await supabase
       .from('chat_messages')
       .update({ is_deleted: true })
       .eq('id', messageId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Failed to delete message:', error);
+      throw error;
+    }
   },
 
   async updateMessage(messageId: string, newMessage: string, memberId: string): Promise<void> {
-    await supabase.rpc('set_member_context', { member_id: memberId });
+    const { error: contextError } = await supabase.rpc('set_member_context', {
+      member_id: memberId
+    });
+
+    if (contextError) {
+      console.error('Failed to set member context:', contextError);
+      throw contextError;
+    }
 
     const { error } = await supabase
       .from('chat_messages')
@@ -56,7 +73,10 @@ export const chatService = {
       })
       .eq('id', messageId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Failed to update message:', error);
+      throw error;
+    }
   },
 
   subscribeToMessages(callback: (message: ChatMessage) => void) {
