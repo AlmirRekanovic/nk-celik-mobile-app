@@ -18,8 +18,6 @@ export const chatService = {
   },
 
   async sendMessage(message: string, memberId: string): Promise<ChatMessage> {
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
     const { data, error } = await supabase
       .from('chat_messages')
       .insert({
@@ -37,8 +35,6 @@ export const chatService = {
   },
 
   async deleteMessage(messageId: string, memberId: string): Promise<void> {
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
     const { error } = await supabase
       .from('chat_messages')
       .update({ is_deleted: true })
@@ -48,8 +44,6 @@ export const chatService = {
   },
 
   async updateMessage(messageId: string, newMessage: string, memberId: string): Promise<void> {
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
     const { error } = await supabase
       .from('chat_messages')
       .update({
