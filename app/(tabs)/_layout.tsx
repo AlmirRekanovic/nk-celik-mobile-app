@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Newspaper, Settings, Vote, ShoppingBag, ScanLine, Ticket } from '@/components/Icons';
+import { Newspaper, Settings, Vote, ShoppingBag, ScanLine, Ticket, MessageCircle } from '@/components/Icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Platform } from 'react-native';
@@ -65,6 +65,15 @@ export default function TabLayout() {
           title: 'Shop',
           tabBarIcon: ({ size, color }) => (
             <ShoppingBag size={20} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Chat',
+          tabBarIcon: ({ size, color }) => (
+            <MessageCircle size={20} color={color} />
           ),
         }}
       />
