@@ -70,6 +70,8 @@ export default function ChatScreen() {
   };
 
   const handleDelete = async (messageId: string) => {
+    if (!user) return;
+
     Alert.alert(
       'Obriši poruku',
       'Da li ste sigurni da želite obrisati ovu poruku?',
@@ -80,7 +82,7 @@ export default function ChatScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await chatService.deleteMessage(messageId);
+              await chatService.deleteMessage(messageId, user.id);
               setMessages((prev) => prev.filter((m) => m.id !== messageId));
             } catch (error) {
               console.error('Failed to delete message:', error);
