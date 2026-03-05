@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useState, useEffect } from 'react';
-import { fetchMemberTickets, deleteTicket, deleteUsedTickets } from '@/services/tickets';
+import { fetchMemberTickets, fetchTicketsByEmail, deleteTicket, deleteUsedTickets } from '@/services/tickets';
 import { Ticket } from '@/types/products';
 import { Ticket as TicketIcon, Calendar, Trash2 } from '@/components/Icons';
 import QRCode from 'react-native-qrcode-svg';
@@ -37,7 +37,14 @@ export default function KarteScreen() {
 
     try {
       setError(null);
-      const data = await fetchMemberTickets(member.id);
+      let data: any[] = [];
+
+      if (member.email) {
+        data = await fetchTicketsByEmail(member.email);
+      } else {
+        data = await fetchMemberTickets(member.id);
+      }
+
       setTickets(data);
     } catch (err) {
       setError('Greška pri učitavanju karata');

@@ -41,6 +41,26 @@ export async function fetchMemberTickets(memberId: string): Promise<Ticket[]> {
   }
 }
 
+export async function fetchTicketsByEmail(email: string): Promise<Ticket[]> {
+  try {
+    const { data, error } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('customer_email', email)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching tickets by email:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching tickets by email:', error);
+    return [];
+  }
+}
+
 export async function fetchAllTickets(
   page: number = 1,
   limit: number = 100
