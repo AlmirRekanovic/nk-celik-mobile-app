@@ -140,7 +140,7 @@ export default function ChatScreen() {
     return (
       <View style={[styles.messageContainer, isOwn && styles.ownMessageContainer]}>
         <View style={[styles.messageBubble, isOwn && styles.ownMessageBubble]}>
-          {!isOwn && <Text style={styles.nickname}>{nickname}</Text>}
+          <Text style={[styles.nickname, isOwn && styles.ownNickname]}>{nickname}</Text>
           <Text style={[styles.messageText, isOwn && styles.ownMessageText]}>
             {item.message}
           </Text>
@@ -284,6 +284,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#D4AF37',
     marginBottom: 4,
+  },
+  ownNickname: {
+    color: '#000',
   },
   messageText: {
     fontSize: 16,
