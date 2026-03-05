@@ -130,6 +130,7 @@ export default function ChatScreen() {
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isOwn = item.member_id === user?.id;
+    const isAdmin = user?.is_admin || false;
     const nickname = item.member?.chat_nickname || 'Unknown';
     const timestamp = new Date(item.created_at).toLocaleTimeString('hr-BA', {
       hour: '2-digit',
@@ -147,12 +148,12 @@ export default function ChatScreen() {
             <Text style={[styles.timestamp, isOwn && styles.ownTimestamp]}>
               {timestamp}
             </Text>
-            {isOwn && (
+            {isAdmin && (
               <TouchableOpacity
                 onPress={() => handleDelete(item.id)}
                 style={styles.deleteButton}
               >
-                <Trash2 size={14} color="#fff" />
+                <Trash2 size={14} color={isOwn ? "#fff" : "#DC2626"} />
               </TouchableOpacity>
             )}
           </View>
