@@ -153,7 +153,7 @@ export default function ChatScreen() {
                 onPress={() => handleDelete(item.id)}
                 style={styles.deleteButton}
               >
-                <Trash2 size={14} color={isOwn ? "#fff" : "#DC2626"} />
+                <Trash2 size={14} color={isOwn ? "#000" : "#D4AF37"} />
               </TouchableOpacity>
             )}
           </View>
@@ -166,7 +166,7 @@ export default function ChatScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#DC2626" />
+          <ActivityIndicator size="large" color="#D4AF37" />
           <Text style={styles.loadingText}>Učitavanje chata...</Text>
         </View>
       </SafeAreaView>
@@ -225,7 +225,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#000',
   },
   loadingContainer: {
     flex: 1,
@@ -235,22 +235,22 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
+    color: '#D4AF37',
   },
   header: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#000',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#B91C1C',
+    borderBottomWidth: 2,
+    borderBottomColor: '#D4AF37',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#D4AF37',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#FEE2E2',
+    color: '#B8960F',
     marginTop: 4,
   },
   content: {
@@ -269,31 +269,29 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     maxWidth: '75%',
-    backgroundColor: '#fff',
+    backgroundColor: '#1a1a1a',
     borderRadius: 16,
     padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   ownMessageBubble: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
+    borderColor: '#B8960F',
   },
   nickname: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#DC2626',
+    color: '#D4AF37',
     marginBottom: 4,
   },
   messageText: {
     fontSize: 16,
-    color: '#1f2937',
+    color: '#fff',
     lineHeight: 22,
   },
   ownMessageText: {
-    color: '#fff',
+    color: '#000',
   },
   messageFooter: {
     flexDirection: 'row',
@@ -303,10 +301,10 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 11,
-    color: '#9ca3af',
+    color: '#666',
   },
   ownTimestamp: {
-    color: '#FEE2E2',
+    color: '#3a3a3a',
   },
   deleteButton: {
     marginLeft: 8,
@@ -315,23 +313,25 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     padding: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    backgroundColor: '#1a1a1a',
+    borderTopWidth: 2,
+    borderTopColor: '#D4AF37',
     alignItems: 'flex-end',
   },
   input: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#000',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 16,
     maxHeight: 100,
-    color: '#1f2937',
+    color: '#fff',
+    borderWidth: 1,
+    borderColor: '#333',
   },
   sendButton: {
-    backgroundColor: '#DC2626',
+    backgroundColor: '#D4AF37',
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -340,6 +340,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   sendButtonDisabled: {
-    backgroundColor: '#9ca3af',
+    backgroundColor: '#4a4a4a',
   },
 });
