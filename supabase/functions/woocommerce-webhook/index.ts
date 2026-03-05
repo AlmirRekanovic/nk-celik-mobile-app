@@ -101,13 +101,13 @@ Deno.serve(async (req: Request) => {
         if (item.meta_data) {
           const eventNameMeta = item.meta_data.find(m => m.key === 'event_name' || m.key === '_event_name');
           const eventDateMeta = item.meta_data.find(m => m.key === 'event_date' || m.key === '_event_date');
-          
+
           if (eventNameMeta) eventName = eventNameMeta.value;
           if (eventDateMeta) eventDate = eventDateMeta.value;
         }
 
-        // Generate unique QR code
-        const qrCode = crypto.randomUUID();
+        // Generate QR code in format: orderNumber-sequenceNumber
+        const qrCode = `${order.number}-${i + 1}`;
 
         ticketsToInsert.push({
           order_id: order.id,
