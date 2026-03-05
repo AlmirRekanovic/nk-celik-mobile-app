@@ -55,7 +55,28 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !user || sending) return;
+    console.log('handleSend called', {
+      hasMessage: !!newMessage.trim(),
+      hasUser: !!user,
+      isSending: sending,
+      userId: user?.id
+    });
+
+    if (!newMessage.trim()) {
+      console.log('No message to send');
+      return;
+    }
+
+    if (!user) {
+      console.log('No user found');
+      Alert.alert('Greška', 'Morate biti prijavljeni da biste slali poruke');
+      return;
+    }
+
+    if (sending) {
+      console.log('Already sending');
+      return;
+    }
 
     console.log('Sending message:', { message: newMessage, userId: user.id });
     setSending(true);
