@@ -28,7 +28,11 @@ export default function ChatScreen() {
   useEffect(() => {
     loadMessages();
     const unsubscribe = chatService.subscribeToMessages((message) => {
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => {
+        const exists = prev.some(m => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
@@ -41,7 +45,7 @@ export default function ChatScreen() {
 
   const loadMessages = async () => {
     try {
-      const data = await chatService.getMessages();
+      const data = await chatService.getMessages(1000);
       setMessages(data);
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: false });
@@ -83,6 +87,12 @@ export default function ChatScreen() {
     try {
       const result = await chatService.sendMessage(newMessage, user.id);
       console.log('Message sent successfully:', result);
+
+      setMessages((prev) => [...prev, result]);
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
       setNewMessage('');
     } catch (error: any) {
       console.error('Failed to send message:', error);
