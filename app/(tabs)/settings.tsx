@@ -15,14 +15,14 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { AppSettings } from '@/types/news';
 import { getSettings, setSettings, getLastSyncTime } from '@/services/storage';
 import { DEFAULT_PAGE_SIZE } from '@/constants/config';
-import { LogOut, UserCog, LogIn, Bell, Moon, Sun } from '@/components/Icons';
+import { LogOut, UserCog, LogIn } from '@/components/Icons';
 import AdBanner from '@/components/AdBanner';
 import { getNotificationPreference, updateNotificationPreference } from '@/services/notifications';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { member, isGuest, signOut } = useAuth();
-  const { theme, toggleTheme, isDarkMode } = useTheme();
+  const { toggleTheme, isDarkMode } = useTheme();
   const [settings, setSettingsState] = useState<AppSettings>({
     backgroundRefreshEnabled: true,
     postsPerPage: DEFAULT_PAGE_SIZE,

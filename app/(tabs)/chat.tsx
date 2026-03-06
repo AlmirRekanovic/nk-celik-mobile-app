@@ -18,7 +18,7 @@ import { ChatMessage } from '@/types/chat';
 import { Trash2, Send } from '@/components/Icons';
 
 export default function ChatScreen() {
-  const { user } = useAuth();
+  const { member } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -55,12 +55,12 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !user || sending) return;
+    if (!newMessage.trim() || !member || sending) return;
 
-    console.log('Sending message:', { message: newMessage, userId: user.id });
+    console.log('Sending message:', { message: newMessage, userId: member.id });
     setSending(true);
     try {
-      const result = await chatService.sendMessage(newMessage, user.id);
+      const result = await chatService.sendMessage(newMessage, member.id);
       console.log('Message sent successfully:', result);
       setNewMessage('');
     } catch (error: any) {
@@ -73,7 +73,7 @@ export default function ChatScreen() {
   };
 
   const handleDelete = async (messageId: string) => {
-    if (!user) return;
+    if (!member) return;
 
     Alert.alert(
       'Obriši poruku',
@@ -85,7 +85,7 @@ export default function ChatScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await chatService.deleteMessage(messageId, user.id);
+              await chatService.deleteMessage(messageId, member.id);
               setMessages((prev) => prev.filter((m) => m.id !== messageId));
             } catch (error) {
               console.error('Failed to delete message:', error);
@@ -98,7 +98,7 @@ export default function ChatScreen() {
   };
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
-    const isOwn = item.member_id === user?.id;
+    const isOwn = item.member_id === member?.id;
     const nickname = item.member?.chat_nickname || 'Unknown';
     const timestamp = new Date(item.created_at).toLocaleTimeString('hr-BA', {
       hour: '2-digit',

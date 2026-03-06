@@ -38,7 +38,8 @@ export const chatService = {
     const { error } = await supabase
       .from('chat_messages')
       .update({ is_deleted: true })
-      .eq('id', messageId);
+      .eq('id', messageId)
+      .eq('member_id', memberId);
 
     if (error) throw error;
   },
@@ -50,7 +51,8 @@ export const chatService = {
         message: newMessage.trim(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', messageId);
+      .eq('id', messageId)
+      .eq('member_id', memberId);
 
     if (error) throw error;
   },
