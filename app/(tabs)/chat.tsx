@@ -28,7 +28,11 @@ export default function ChatScreen() {
   useEffect(() => {
     loadMessages();
     const unsubscribe = chatService.subscribeToMessages((message) => {
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
@@ -41,7 +45,7 @@ export default function ChatScreen() {
 
   const loadMessages = async () => {
     try {
-      const data = await chatService.getMessages();
+      const data = await chatService.getMessages(1000);
       setMessages(data);
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: false });
@@ -55,13 +59,32 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !member || sending) return;
+    const trimmedMessage = newMessage.trim();
 
-    console.log('Sending message:', { message: newMessage, userId: member.id });
+    if (!trimmedMessage) return;
+
+    if (!member) {
+      Alert.alert('Greška', 'Morate biti prijavljeni da biste slali poruke');
+      return;
+    }
+
+    if (sending) return;
+
+    console.log('Sending message:', { message: trimmedMessage, userId: member.id });
     setSending(true);
     try {
-      const result = await chatService.sendMessage(newMessage, member.id);
+      const result = await chatService.sendMessage(trimmedMessage, member.id);
       console.log('Message sent successfully:', result);
+
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === result.id);
+        if (exists) return prev;
+        return [...prev, result];
+      });
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
       setNewMessage('');
     } catch (error: any) {
       console.error('Failed to send message:', error);
@@ -99,6 +122,7 @@ export default function ChatScreen() {
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isOwn = item.member_id === member?.id;
+    const isAdmin = member?.is_admin || false;
     const nickname = item.member?.chat_nickname || 'Unknown';
     const timestamp = new Date(item.created_at).toLocaleTimeString('hr-BA', {
       hour: '2-digit',
@@ -108,7 +132,7 @@ export default function ChatScreen() {
     return (
       <View style={[styles.messageContainer, isOwn && styles.ownMessageContainer]}>
         <View style={[styles.messageBubble, isOwn && styles.ownMessageBubble]}>
-          {!isOwn && <Text style={styles.nickname}>{nickname}</Text>}
+          <Text style={[styles.nickname, isOwn && styles.ownNickname]}>{nickname}</Text>
           <Text style={[styles.messageText, isOwn && styles.ownMessageText]}>
             {item.message}
           </Text>
@@ -116,12 +140,12 @@ export default function ChatScreen() {
             <Text style={[styles.timestamp, isOwn && styles.ownTimestamp]}>
               {timestamp}
             </Text>
-            {isOwn && (
+            {isAdmin && (
               <TouchableOpacity
                 onPress={() => handleDelete(item.id)}
                 style={styles.deleteButton}
               >
-                <Trash2 size={14} color="#fff" />
+                <Trash2 size={14} color={isOwn ? '#fff' : '#DC2626'} />
               </TouchableOpacity>
             )}
           </View>
@@ -254,6 +278,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#DC2626',
     marginBottom: 4,
+  },
+  ownNickname: {
+    color: '#FEE2E2',
   },
   messageText: {
     fontSize: 16,
