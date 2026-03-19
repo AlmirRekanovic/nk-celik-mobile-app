@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
-  const { member } = useAuth();
+  const { member, isGuest } = useAuth();
   const { isDarkMode } = useTheme();
   const isAdmin = member?.is_admin || false;
   const insets = useSafeAreaInsets();
@@ -75,6 +75,7 @@ export default function TabLayout() {
           tabBarIcon: ({ size, color }) => (
             <MessageCircle size={20} color={color} />
           ),
+          href: isGuest ? null : undefined,
         }}
       />
       <Tabs.Screen
