@@ -24,6 +24,7 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const messageTimestamps = useRef<number[]>([]);
 
   useEffect(() => {
     loadMessages();
@@ -82,11 +83,24 @@ export default function ChatScreen() {
       return;
     }
 
+    const now = Date.now();
+    const tenSecondsAgo = now - 10000;
+    messageTimestamps.current = messageTimestamps.current.filter(
+      (timestamp) => timestamp > tenSecondsAgo
+    );
+
+    if (messageTimestamps.current.length >= 3) {
+      Alert.alert('Previše poruka', 'Možete slati najviše 3 poruke u 10 sekundi. Molimo sačekajte.');
+      return;
+    }
+
     console.log('Sending message:', { message: newMessage, userId: user.id });
     setSending(true);
     try {
       const result = await chatService.sendMessage(newMessage, user.id);
       console.log('Message sent successfully:', result);
+
+      messageTimestamps.current.push(now);
 
       setMessages((prev) => [...prev, result]);
       setTimeout(() => {
