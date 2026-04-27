@@ -6,24 +6,29 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+type NotificationType = "news" | "poll";
+
 interface PushNotificationRequest {
   title: string;
   body: string;
-  data?: Record<string, any>;
-  type: "news" | "poll";
+  data?: Record<string, unknown>;
+  type: NotificationType;
 }
 
-interface PushToken {
+interface PushTokenRow {
   token: string;
   platform: string;
 }
 
+const json = (status: number, payload: unknown) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
@@ -34,57 +39,45 @@ Deno.serve(async (req: Request) => {
     const { title, body, data, type }: PushNotificationRequest = await req.json();
 
     if (!title || !body || !type) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: title, body, type" }),
-        {
-          status: 400,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return json(400, { error: "Missing required fields: title, body, type" });
     }
+
+    if (type !== "news" && type !== "poll") {
+      return json(400, { error: "type must be 'news' or 'poll'" });
+    }
+
+    const categoryColumn = type === "news" ? "news_enabled" : "polls_enabled";
 
     const { data: tokens, error: tokensError } = await supabase
       .from("push_tokens")
       .select("token, platform")
-      .eq("enabled", true);
+      .eq("enabled", true)
+      .eq(categoryColumn, true);
 
     if (tokensError) {
       throw tokensError;
     }
 
     if (!tokens || tokens.length === 0) {
-      return new Response(
-        JSON.stringify({ message: "No active push tokens found" }),
-        {
-          status: 200,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return json(200, { message: "No active push tokens for this category", sentCount: 0 });
     }
 
-    const messages = (tokens as PushToken[]).map((tokenData) => ({
+    const messages = (tokens as PushTokenRow[]).map((tokenData) => ({
       to: tokenData.token,
       sound: "default",
       title,
       body,
-      data: {
-        ...data,
-        type,
-      },
+      data: { ...data, type },
     }));
 
-    const chunks = [];
+    const chunks: typeof messages[] = [];
     for (let i = 0; i < messages.length; i += 100) {
       chunks.push(messages.slice(i, i + 100));
     }
 
-    const results = [];
+    const results: unknown[] = [];
+    const invalidTokens: string[] = [];
+
     for (const chunk of chunks) {
       const response = await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST",
@@ -102,33 +95,44 @@ Deno.serve(async (req: Request) => {
 
       const result = await response.json();
       results.push(result);
+
+      const tickets = (result?.data ?? []) as Array<{
+        status?: string;
+        details?: { error?: string };
+      }>;
+      tickets.forEach((ticket, idx) => {
+        const offendingToken = chunk[idx]?.to;
+        if (
+          ticket?.status === "error" &&
+          (ticket.details?.error === "DeviceNotRegistered" ||
+            ticket.details?.error === "InvalidCredentials") &&
+          offendingToken
+        ) {
+          invalidTokens.push(offendingToken);
+        }
+      });
     }
 
-    return new Response(
-      JSON.stringify({
-        message: "Push notifications sent successfully",
-        sentCount: messages.length,
-        results,
-      }),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
+    if (invalidTokens.length > 0) {
+      const { error: cleanupError } = await supabase
+        .from("push_tokens")
+        .delete()
+        .in("token", invalidTokens);
+      if (cleanupError) {
+        console.error("Failed to delete invalid tokens:", cleanupError);
       }
-    );
+    }
+
+    return json(200, {
+      message: "Push notifications dispatched",
+      sentCount: messages.length,
+      invalidCount: invalidTokens.length,
+      results,
+    });
   } catch (error) {
     console.error("Error in send-push-notification:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    return json(500, {
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 });

@@ -11,13 +11,23 @@ This guide explains how to build APK and IPA files for testing with friends.
 - Shop tab with external link to WooCommerce store
 - Settings and profile management
 
-### VERSION 2.0.0 (Current)
+### VERSION 2.0.0
 **Major Update: Embedded Store**
 - Store now loads directly inside the app (WebView)
 - No external browser needed
 - Loading indicator for better UX
 - Full shopping experience within the app
 - All features from v1.0.0 maintained
+
+### VERSION 2.1.0 (Current)
+**Production hardening + notifications**
+- Realtime chat publication + admin policy fix
+- Per-category push notifications (news / polls) with master toggle
+- Authenticated WordPress webhook (shared secret) + idempotent dedupe log
+- Supabase cron-driven news poller as a redundant delivery path
+- Bumped Android `versionCode` for Play Store updates
+- Removed `eas-cli` from devDependencies; added `/android` and `/ios` to .gitignore
+- Documented local production build (prebuild → gradlew bundleRelease)
 
 ## Prerequisites
 
@@ -43,16 +53,16 @@ This guide explains how to build APK and IPA files for testing with friends.
 
 3. **Configure Environment Variables (CRITICAL)**
 
-   The app requires environment variables to work on real devices. You MUST set these before building:
+   The app requires environment variables to work on real devices. You MUST set these before building. Values are kept in `eas.json` (and only there — never paste real secrets into docs).
 
    ```bash
    # Set Supabase credentials
-   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "https://oosnrzkrxyjzpopbnpxt.supabase.co" --type string
-   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-supabase-anon-key" --type string
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "<from eas.json>" --type string
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "<from eas.json>" --type string
 
-   # Set WooCommerce credentials (from your .env file)
-   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_CONSUMER_KEY --value "ck_6ef6d57acfcdabd4e1600853cbf86a2637dc3cad" --type string
-   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_CONSUMER_SECRET --value "cs_257517cdc65627c06d3347126655faa8ffa5593e" --type string
+   # Set WooCommerce credentials (rotate the key/secret in WooCommerce → Settings → Advanced → REST API if they were ever leaked)
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_CONSUMER_KEY --value "<from eas.json>" --type string
+   npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_CONSUMER_SECRET --value "<from eas.json>" --type string
    npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_SITE_URL --value "https://nkcelik.ba" --type string
    ```
 

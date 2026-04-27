@@ -1,169 +1,158 @@
-# Push Notifications Setup Guide
+# Push Notifications
 
-Push notifications have been implemented for new news posts and polls. Users will receive notifications on their mobile devices when new content is published.
+Users get push notifications for two events:
 
-## Features
+- **News** — a new article is published on https://nkcelik.ba
+- **Polls** — admin opens a new poll, or activates an existing one
 
-- Push notifications for new news articles
-- Push notifications for new polls
-- User preference toggle in settings
-- Works on iOS and Android (not on web)
-- Automatic token registration on login
-- Secure storage of push tokens in Supabase
+Notifications fan out to every device whose member has the relevant
+preference enabled, via Expo's push service.
 
-## How It Works
+## Architecture
 
-### 1. User Registration
-When a member logs in to the app:
-- The app automatically requests notification permissions
-- If granted, an Expo push token is generated
-- The token is stored in the `push_tokens` table in Supabase
-- The token is associated with the member's ID
+```
+                    ┌──────────────────────┐
+WordPress publish ─►│ wordpress-webhook    │──┐
+                    │ (Supabase Edge Fn)   │  │
+                    └──────────────────────┘  │
+                                              ▼
+Cron (every 10 min) ┌──────────────────────┐  ┌────────────────────────┐
+                  ─►│ news-poller          │─►│ send-push-notification │─► Expo ─► devices
+                    │ (Supabase Edge Fn)   │  │ (Supabase Edge Fn)     │
+                    └──────────────────────┘  └────────────────────────┘
+                                              ▲
+DB INSERT/UPDATE  ─► notify_new_poll trigger ─┘
+on `polls`
+```
 
-### 2. User Settings
-Members can control notifications:
-- Go to Settings tab
-- Toggle "Push obavještenja" switch
-- This enables/disables notifications without removing the token
+The webhook and the poller are **redundant by design** — either one alone is
+enough. The dedup table `news_notifications(wp_post_id)` ensures a given
+WordPress post never triggers more than one push, no matter which path
+delivers it first.
 
-### 3. Sending Notifications
+## Database schema
 
-#### Option A: Using the Edge Function Directly
+| Table | Purpose |
+|---|---|
+| `push_tokens` | One row per device. Columns: `member_id`, `token`, `platform`, `enabled` (master switch), `news_enabled`, `polls_enabled` |
+| `news_notifications` | Idempotency log. Primary key is `wp_post_id` |
 
-You can send notifications by calling the edge function:
+RLS lets each member manage only their own `push_tokens` rows; no client
+ever reads/writes `news_notifications`.
+
+## Required deployment steps
+
+After applying the migrations, you also need to do these **once**:
+
+### 1. Deploy edge functions
 
 ```bash
+npx supabase login
+npx supabase link --project-ref oosnrzkrxyjzpopbnpxt
+npx supabase functions deploy send-push-notification
+npx supabase functions deploy wordpress-webhook
+npx supabase functions deploy news-poller
+```
+
+### 2. Set edge function secrets
+
+```bash
+# Required for both webhook and poller — generated once, kept in WordPress
+npx supabase secrets set WORDPRESS_WEBHOOK_SECRET="$(openssl rand -hex 32)"
+
+# Optional — override the default WordPress URL for the poller
+npx supabase secrets set WP_BASE_URL="https://nkcelik.ba/wp-json/wp/v2"
+```
+
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically.
+
+### 3. Set the GUCs the polls trigger reads
+
+The `notify_new_poll` trigger calls `send_push_notification` over HTTP and
+needs the project URL + service key. These are intentionally NOT in any
+migration — set them per-environment via the Supabase SQL editor:
+
+```sql
+ALTER DATABASE postgres SET app.settings.supabase_url = 'https://oosnrzkrxyjzpopbnpxt.supabase.co';
+ALTER DATABASE postgres SET app.settings.service_key  = 'YOUR_SERVICE_ROLE_KEY';
+```
+
+Reload the connection (or restart the project) for the changes to take
+effect.
+
+### 4. Schedule the news poller
+
+In the Supabase dashboard → Database → Cron → New Cron Job:
+
+| Field | Value |
+|---|---|
+| Name | `news-poller` |
+| Schedule | `*/10 * * * *` (every 10 minutes) |
+| HTTP Request | `POST https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/news-poller` |
+| Headers | `Authorization: Bearer <service-role-key>` |
+
+This is the **fallback** — if WordPress isn't configured to call the
+webhook, the poller still catches new posts.
+
+### 5. (Optional) Wire up the WordPress webhook
+
+For real-time delivery (vs. up to 10-minute lag from the poller), install
+[WP Webhooks](https://wp-webhooks.com/) (or any plugin that POSTs on
+`save_post`) and configure it to:
+
+- URL: `https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/wordpress-webhook`
+- Method: `POST`
+- Header: `X-Webhook-Secret: <same value as WORDPRESS_WEBHOOK_SECRET>`
+- Body: full WordPress post JSON (the plugin's default for `post_updated`)
+
+Without the secret header the webhook returns 401, so leaking the URL
+alone does not let attackers spam your users.
+
+## Per-category preferences
+
+Each member has three flags on `push_tokens`:
+
+- `enabled` — master switch (off → no notifications at all)
+- `news_enabled` — gates news pushes
+- `polls_enabled` — gates poll pushes
+
+The `send-push-notification` edge function filters tokens by both the
+master switch and the category column for each request.
+
+## Local testing
+
+```bash
+# Send a fake news notification to all opted-in devices
 curl -X POST \
-  https://[YOUR-SUPABASE-URL]/functions/v1/send-push-notification \
-  -H "Authorization: Bearer [YOUR-SUPABASE-ANON-KEY]" \
+  https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/send-push-notification \
+  -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Nova vijest",
-    "body": "Čelik pobijedio 3-0!",
+    "title": "Test",
+    "body": "Test body",
     "type": "news",
-    "data": {
-      "postId": 12345,
-      "url": "https://nkcelik.ba/..."
-    }
+    "data": {}
   }'
+
+# Trigger the poller manually
+curl -X POST \
+  https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/news-poller \
+  -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"
 ```
-
-#### Option B: Automating with WordPress Webhooks
-
-To automatically send notifications when new content is published:
-
-1. Install a WordPress plugin like "WP Webhooks" or "Zapier for WordPress"
-2. Create a webhook that triggers on:
-   - New post published
-   - New poll created
-3. Configure the webhook to call your edge function
-
-#### Option C: Manual Testing
-
-For testing purposes, you can use the Supabase Dashboard:
-1. Go to your Supabase project
-2. Navigate to Edge Functions
-3. Select `send-push-notification`
-4. Test with sample JSON data
-
-## Database Schema
-
-### push_tokens Table
-- `id` (uuid) - Primary key
-- `member_id` (text) - References members table
-- `token` (text) - Expo push token (unique)
-- `platform` (text) - ios, android, or web
-- `enabled` (boolean) - Notification preference
-- `created_at` (timestamptz)
-- `updated_at` (timestamptz)
-
-## Edge Function API
-
-### Endpoint
-`POST /functions/v1/send-push-notification`
-
-### Request Body
-```json
-{
-  "title": "Notification Title",
-  "body": "Notification message",
-  "type": "news" | "poll",
-  "data": {
-    "postId": 123,
-    "additionalData": "..."
-  }
-}
-```
-
-### Response
-```json
-{
-  "message": "Push notifications sent successfully",
-  "sentCount": 150,
-  "results": [...]
-}
-```
-
-## Important Notes
-
-### Web Platform Limitation
-- Push notifications do NOT work on web browsers
-- Only works on physical iOS and Android devices
-- Development builds require Expo Go or EAS Development Client
-
-### Testing Requirements
-To test push notifications, you need:
-1. A physical iOS or Android device
-2. Expo Go app OR a development build
-3. The app must be built with EAS Build for production
-
-### EAS Build Configuration
-For production builds, you'll need:
-1. An Expo account
-2. EAS CLI configured
-3. Push notification credentials set up in Expo
-
-Run these commands to set up:
-```bash
-npm install -g eas-cli
-eas login
-eas build:configure
-```
-
-## Migration File
-
-The database migration has been created at:
-`supabase/migrations/20260113120000_create_push_tokens_schema.sql`
-
-Make sure to apply this migration to your Supabase database.
-
-## Security
-
-- Row Level Security (RLS) is enabled on the push_tokens table
-- Members can only view and manage their own tokens
-- The edge function can only be called with valid Supabase credentials
-- Push tokens are securely stored and never exposed to clients
 
 ## Troubleshooting
 
-### Notifications Not Received
-1. Check device notification permissions in system settings
-2. Verify the push token was saved (query push_tokens table)
-3. Check the member has notifications enabled in app settings
-4. Verify the edge function was called successfully
-5. Check Expo push notification service status
+| Symptom | Likely cause |
+|---|---|
+| No notifications at all | Master switch off, or `push_tokens` row missing — confirm registration in app settings |
+| News works but polls don't | `app.settings.supabase_url` / `app.settings.service_key` not set on the database (step 3) |
+| Polls work but news doesn't | Cron not scheduled (step 4) and WordPress not configured (step 5) |
+| Webhook returns 401 | Plugin isn't sending `X-Webhook-Secret`, or the value doesn't match the Supabase secret |
+| Same article notified twice | Check that migration `20260427130100_create_news_notifications_log.sql` has been applied |
+| Token errors in edge fn logs | Expected — invalid Expo tokens are auto-deleted from `push_tokens` after the first failed delivery |
 
-### Token Not Registering
-1. Make sure you're using a physical device
-2. Check console logs for permission errors
-3. Verify member is logged in (not guest mode)
-3. Check Supabase connection and RLS policies
+## Future enhancements
 
-## Future Enhancements
-
-Possible improvements:
-- Notification history in the app
-- Scheduled notifications
-- Different notification channels for news vs polls
-- Rich notifications with images
-- Action buttons in notifications
+- Match notifications send a poll-style push when a fixture is announced
+- Targeted notifications (admin can send to specific members or groups)
+- In-app notification inbox so users can see history

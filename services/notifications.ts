@@ -116,6 +116,14 @@ export async function unregisterPushToken(memberId: string, token: string): Prom
   }
 }
 
+export type NotificationCategory = 'news' | 'polls';
+
+export interface NotificationPreferences {
+  enabled: boolean;
+  news_enabled: boolean;
+  polls_enabled: boolean;
+}
+
 export async function updateNotificationPreference(
   memberId: string,
   enabled: boolean
@@ -129,6 +137,26 @@ export async function updateNotificationPreference(
       .eq('member_id', memberId);
   } catch (error) {
     console.error('Error updating notification preference:', error);
+    throw error;
+  }
+}
+
+export async function updateCategoryPreference(
+  memberId: string,
+  category: NotificationCategory,
+  enabled: boolean
+): Promise<void> {
+  try {
+    await supabase.rpc('set_member_context', { member_id: memberId });
+
+    const column = category === 'news' ? 'news_enabled' : 'polls_enabled';
+
+    await supabase
+      .from('push_tokens')
+      .update({ [column]: enabled })
+      .eq('member_id', memberId);
+  } catch (error) {
+    console.error('Error updating category preference:', error);
     throw error;
   }
 }
@@ -147,6 +175,37 @@ export async function getNotificationPreference(memberId: string): Promise<boole
   } catch (error) {
     console.error('Error getting notification preference:', error);
     return false;
+  }
+}
+
+export async function getNotificationPreferences(
+  memberId: string
+): Promise<NotificationPreferences> {
+  const fallback: NotificationPreferences = {
+    enabled: false,
+    news_enabled: false,
+    polls_enabled: false,
+  };
+
+  try {
+    await supabase.rpc('set_member_context', { member_id: memberId });
+
+    const { data } = await supabase
+      .from('push_tokens')
+      .select('enabled, news_enabled, polls_enabled')
+      .eq('member_id', memberId)
+      .maybeSingle();
+
+    if (!data) return fallback;
+
+    return {
+      enabled: data.enabled ?? false,
+      news_enabled: data.news_enabled ?? data.enabled ?? false,
+      polls_enabled: data.polls_enabled ?? data.enabled ?? false,
+    };
+  } catch (error) {
+    console.error('Error getting notification preferences:', error);
+    return fallback;
   }
 }
 

@@ -17,7 +17,12 @@ import { getSettings, setSettings, getLastSyncTime } from '@/services/storage';
 import { DEFAULT_PAGE_SIZE } from '@/constants/config';
 import { LogOut, UserCog, LogIn } from '@/components/Icons';
 import AdBanner from '@/components/AdBanner';
-import { getNotificationPreference, updateNotificationPreference } from '@/services/notifications';
+import {
+  getNotificationPreferences,
+  updateCategoryPreference,
+  updateNotificationPreference,
+  NotificationPreferences,
+} from '@/services/notifications';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -28,12 +33,16 @@ export default function SettingsScreen() {
     postsPerPage: DEFAULT_PAGE_SIZE,
   });
   const [lastSync, setLastSync] = useState<string | null>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({
+    enabled: false,
+    news_enabled: false,
+    polls_enabled: false,
+  });
 
   useEffect(() => {
     loadSettings();
     loadLastSync();
-    loadNotificationPreference();
+    loadNotificationPreferences();
   }, [member?.id]);
 
   const loadSettings = async () => {
@@ -46,17 +55,38 @@ export default function SettingsScreen() {
     setLastSync(syncTime);
   };
 
-  const loadNotificationPreference = async () => {
+  const loadNotificationPreferences = async () => {
     if (member?.id) {
-      const enabled = await getNotificationPreference(member.id);
-      setNotificationsEnabled(enabled);
+      const prefs = await getNotificationPreferences(member.id);
+      setNotificationPrefs(prefs);
     }
   };
 
   const handleToggleNotifications = async (value: boolean) => {
-    if (member?.id) {
-      setNotificationsEnabled(value);
+    if (!member?.id) return;
+    const previous = notificationPrefs;
+    setNotificationPrefs((prev) => ({ ...prev, enabled: value }));
+    try {
       await updateNotificationPreference(member.id, value);
+    } catch (error) {
+      console.error('Failed to update notifications:', error);
+      setNotificationPrefs(previous);
+    }
+  };
+
+  const handleToggleCategory = async (
+    category: 'news' | 'polls',
+    value: boolean
+  ) => {
+    if (!member?.id) return;
+    const key = category === 'news' ? 'news_enabled' : 'polls_enabled';
+    const previous = notificationPrefs;
+    setNotificationPrefs((prev) => ({ ...prev, [key]: value }));
+    try {
+      await updateCategoryPreference(member.id, category, value);
+    } catch (error) {
+      console.error('Failed to update category preference:', error);
+      setNotificationPrefs(previous);
     }
   };
 
@@ -193,14 +223,54 @@ export default function SettingsScreen() {
               <View style={styles.settingInfo}>
                 <Text style={[styles.settingLabel, { color: textColor }]}>Push obavještenja</Text>
                 <Text style={[styles.settingDescription, { color: subtextColor }]}>
-                  Primaj obavještenja o novim vijestima i anketama
+                  Glavni prekidač za sva obavještenja
                 </Text>
               </View>
               <Switch
-                value={notificationsEnabled}
+                value={notificationPrefs.enabled}
                 onValueChange={handleToggleNotifications}
                 trackColor={{ false: '#D1D5DB', true: '#FFE8A1' }}
-                thumbColor={notificationsEnabled ? '#D4AF37' : '#F3F4F6'}
+                thumbColor={notificationPrefs.enabled ? '#D4AF37' : '#F3F4F6'}
+              />
+            </View>
+
+            <View style={[styles.settingRow, { borderTopWidth: 1, borderTopColor: borderColor }]}>
+              <View style={styles.settingInfo}>
+                <Text style={[styles.settingLabel, { color: textColor }]}>Nove vijesti</Text>
+                <Text style={[styles.settingDescription, { color: subtextColor }]}>
+                  Obavještenja o novim novostima sa nkcelik.ba
+                </Text>
+              </View>
+              <Switch
+                value={notificationPrefs.enabled && notificationPrefs.news_enabled}
+                onValueChange={(v) => handleToggleCategory('news', v)}
+                disabled={!notificationPrefs.enabled}
+                trackColor={{ false: '#D1D5DB', true: '#FFE8A1' }}
+                thumbColor={
+                  notificationPrefs.enabled && notificationPrefs.news_enabled
+                    ? '#D4AF37'
+                    : '#F3F4F6'
+                }
+              />
+            </View>
+
+            <View style={[styles.settingRow, { borderTopWidth: 1, borderTopColor: borderColor }]}>
+              <View style={styles.settingInfo}>
+                <Text style={[styles.settingLabel, { color: textColor }]}>Nove ankete</Text>
+                <Text style={[styles.settingDescription, { color: subtextColor }]}>
+                  Obavještenja kada admin otvori novu anketu
+                </Text>
+              </View>
+              <Switch
+                value={notificationPrefs.enabled && notificationPrefs.polls_enabled}
+                onValueChange={(v) => handleToggleCategory('polls', v)}
+                disabled={!notificationPrefs.enabled}
+                trackColor={{ false: '#D1D5DB', true: '#FFE8A1' }}
+                thumbColor={
+                  notificationPrefs.enabled && notificationPrefs.polls_enabled
+                    ? '#D4AF37'
+                    : '#F3F4F6'
+                }
               />
             </View>
           </View>

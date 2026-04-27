@@ -2,12 +2,12 @@
   "expo": {
     "name": "NK Čelik",
     "slug": "nk-celik",
-    "version": "1.0.0",
+    "version": "2.1.0",
     "orientation": "portrait",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "runtimeVersion": "1.0.0",
+    "runtimeVersion": "2.1.0",
     "icon": "./assets/celik.fix.badge.png",
     "splash": {
       "image": "./assets/splashscreen.png",
@@ -33,6 +33,7 @@
         "backgroundColor": "#000000"
       },
       "package": "com.nkcelik.app",
+      "versionCode": 3,
       "jsEngine": "hermes",
       "permissions": [
         "CAMERA",
