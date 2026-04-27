@@ -15,7 +15,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { AppSettings } from '@/types/news';
 import { getSettings, setSettings, getLastSyncTime } from '@/services/storage';
 import { DEFAULT_PAGE_SIZE } from '@/constants/config';
-import { LogOut, UserCog, LogIn, Bell, Moon, Sun } from '@/components/Icons';
+import { LogOut, UserCog, LogIn } from '@/components/Icons';
 import AdBanner from '@/components/AdBanner';
 import { getNotificationPreference, updateNotificationPreference } from '@/services/notifications';
 

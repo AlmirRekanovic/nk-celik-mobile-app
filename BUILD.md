@@ -67,7 +67,93 @@ This guide explains how to build APK and IPA files for testing with friends.
    npx eas-cli secret:create --scope project --name EXPO_PUBLIC_WC_CONSUMER_KEY --value "new-value" --type string
    ```
 
-## Building APK (Android)
+## Local Production Build
+
+You can produce a Play Store–ready Android Bundle (`.aab`) or an installable
+APK directly on your machine without using EAS. The native `android/`
+directory is generated on demand and is gitignored.
+
+### Prerequisites
+
+- Node.js + npm
+- Java 17 (Android Gradle Plugin 8 requirement)
+- Android SDK + platform-tools (Android Studio is the easiest install)
+- Environment variables placed in `.env` (the same `EXPO_PUBLIC_*` keys used by
+  EAS, listed above) so the app picks them up at build time
+
+### Steps
+
+1. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+2. **Generate the native Android project** (recreates `android/` cleanly)
+
+   ```bash
+   npx expo prebuild --platform android --clean
+   ```
+
+3. **Build a release Android App Bundle for the Play Store**
+
+   ```bash
+   cd android
+   ./gradlew bundleRelease
+   ```
+
+   The bundle is written to:
+
+   ```
+   android/app/build/outputs/bundle/release/app-release.aab
+   ```
+
+   Upload that `.aab` file to the Google Play Console.
+
+4. **(Optional) Build a sideloadable release APK**
+
+   ```bash
+   cd android
+   ./gradlew assembleRelease
+   ```
+
+   The APK is written to:
+
+   ```
+   android/app/build/outputs/apk/release/app-release.apk
+   ```
+
+### Signing for the Play Store
+
+Play Store uploads MUST be signed with a release keystore — the debug keystore
+will be rejected. To sign:
+
+1. Generate a keystore once (keep the `.jks` and passwords somewhere safe; if
+   you lose them you cannot push updates to the same Play Store listing):
+
+   ```bash
+   keytool -genkeypair -v -keystore nk-celik-release.jks \
+     -alias nk-celik -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+2. Place the keystore at `android/app/nk-celik-release.jks` (gitignored — never
+   commit it) and create `android/gradle.properties` (or `~/.gradle/gradle.properties`)
+   with:
+
+   ```
+   NK_CELIK_UPLOAD_STORE_FILE=nk-celik-release.jks
+   NK_CELIK_UPLOAD_KEY_ALIAS=nk-celik
+   NK_CELIK_UPLOAD_STORE_PASSWORD=...
+   NK_CELIK_UPLOAD_KEY_PASSWORD=...
+   ```
+
+3. Wire the `signingConfigs.release` block in `android/app/build.gradle` to
+   read those properties, then re-run `./gradlew bundleRelease`.
+
+4. Enrolling in **Play App Signing** is recommended — Google holds the final
+   signing key and you only manage the upload key.
+
+## Building APK (Android) via EAS
 
 ### Quick Testing Build
 ```bash

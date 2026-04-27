@@ -122,8 +122,8 @@ export default function VotingScreen() {
   };
 
   const renderPoll = (poll: PollWithVotes, index: number) => (
-    <>
-      <View key={poll.id} style={[styles.pollCard, { backgroundColor: cardBg }]}>
+    <View key={poll.id}>
+      <View style={[styles.pollCard, { backgroundColor: cardBg }]}>
         <View style={styles.pollHeader}>
           <Text style={[styles.pollTitle, { color: textColor }]}>{poll.title}</Text>
           {poll.user_vote && (
@@ -167,7 +167,7 @@ export default function VotingScreen() {
       {(index + 1) % 2 === 0 && index < polls.length - 1 && (
         <AdInFeed style={styles.adSpacing} />
       )}
-    </>
+    </View>
   );
 
   const renderEmpty = () => (
