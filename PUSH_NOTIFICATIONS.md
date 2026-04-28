@@ -48,7 +48,7 @@ After applying the migrations, you also need to do these **once**:
 
 ```bash
 npx supabase login
-npx supabase link --project-ref oosnrzkrxyjzpopbnpxt
+npx supabase link --project-ref qqolxourbfnatlbrrrpr
 npx supabase functions deploy send-push-notification
 npx supabase functions deploy wordpress-webhook
 npx supabase functions deploy news-poller
@@ -73,7 +73,7 @@ needs the project URL + service key. These are intentionally NOT in any
 migration — set them per-environment via the Supabase SQL editor:
 
 ```sql
-ALTER DATABASE postgres SET app.settings.supabase_url = 'https://oosnrzkrxyjzpopbnpxt.supabase.co';
+ALTER DATABASE postgres SET app.settings.supabase_url = 'https://qqolxourbfnatlbrrrpr.supabase.co';
 ALTER DATABASE postgres SET app.settings.service_key  = 'YOUR_SERVICE_ROLE_KEY';
 ```
 
@@ -88,7 +88,7 @@ In the Supabase dashboard → Database → Cron → New Cron Job:
 |---|---|
 | Name | `news-poller` |
 | Schedule | `*/10 * * * *` (every 10 minutes) |
-| HTTP Request | `POST https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/news-poller` |
+| HTTP Request | `POST https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/news-poller` |
 | Headers | `Authorization: Bearer <service-role-key>` |
 
 This is the **fallback** — if WordPress isn't configured to call the
@@ -100,7 +100,7 @@ For real-time delivery (vs. up to 10-minute lag from the poller), install
 [WP Webhooks](https://wp-webhooks.com/) (or any plugin that POSTs on
 `save_post`) and configure it to:
 
-- URL: `https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/wordpress-webhook`
+- URL: `https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/wordpress-webhook`
 - Method: `POST`
 - Header: `X-Webhook-Secret: <same value as WORDPRESS_WEBHOOK_SECRET>`
 - Body: full WordPress post JSON (the plugin's default for `post_updated`)
@@ -124,7 +124,7 @@ master switch and the category column for each request.
 ```bash
 # Send a fake news notification to all opted-in devices
 curl -X POST \
-  https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/send-push-notification \
+  https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/send-push-notification \
   -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -136,7 +136,7 @@ curl -X POST \
 
 # Trigger the poller manually
 curl -X POST \
-  https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/news-poller \
+  https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/news-poller \
   -H "Authorization: Bearer $SUPABASE_SERVICE_KEY"
 ```
 

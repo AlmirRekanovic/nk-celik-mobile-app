@@ -46,7 +46,7 @@ This guide explains how to set up automatic ticket sync from your WooCommerce st
 
 **Delivery URL:**
 ```
-https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/woocommerce-webhook
+https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/woocommerce-webhook
 ```
 
 **Secret:** (leave empty - not required)

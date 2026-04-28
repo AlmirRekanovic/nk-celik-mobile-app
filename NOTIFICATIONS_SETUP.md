@@ -32,7 +32,7 @@ To enable push notifications for new articles, you need to set up a WordPress we
 
 Your WordPress webhook URL is:
 ```
-https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/wordpress-webhook
+https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/wordpress-webhook
 ```
 
 ### Step 2: Install WordPress Plugin
@@ -57,7 +57,7 @@ function send_notification_on_post_publish( $post_id, $post ) {
         return;
     }
 
-    $webhook_url = 'https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/wordpress-webhook';
+    $webhook_url = 'https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/wordpress-webhook';
 
     $data = array(
         'id' => $post->ID,
@@ -93,7 +93,7 @@ add_action( 'publish_post', 'send_notification_on_post_publish', 10, 2 );
 2. Go to Settings → WP Webhooks
 3. Add new webhook:
    - **Trigger**: `post_published`
-   - **URL**: `https://oosnrzkrxyjzpopbnpxt.supabase.co/functions/v1/wordpress-webhook`
+   - **URL**: `https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/wordpress-webhook`
    - **Method**: POST
    - **Content Type**: application/json
 
