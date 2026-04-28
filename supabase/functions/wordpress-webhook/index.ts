@@ -35,6 +35,21 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Validate webhook secret if configured
+    const webhookSecret = Deno.env.get("WORDPRESS_WEBHOOK_SECRET");
+    if (webhookSecret) {
+      const incomingSecret = req.headers.get("X-Webhook-Secret");
+      if (incomingSecret !== webhookSecret) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
     const post: WordPressPost = await req.json();
 
     console.log("Received WordPress post:", post.id);
@@ -73,7 +88,7 @@ Deno.serve(async (req: Request) => {
           Authorization: `Bearer ${supabaseServiceKey}`,
         },
         body: JSON.stringify({
-          title: "Nove vijesti! 📰",
+          title: "Nove vijesti!",
           body: title,
           type: "news",
           data: {

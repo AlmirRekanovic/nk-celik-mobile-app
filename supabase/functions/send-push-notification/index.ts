@@ -46,10 +46,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Filter by per-type preference columns (news_enabled / polls_enabled)
+    const typeFilter = type === "news" ? "news_enabled" : "polls_enabled";
+
     const { data: tokens, error: tokensError } = await supabase
       .from("push_tokens")
       .select("token, platform")
-      .eq("enabled", true);
+      .eq("enabled", true)
+      .eq(typeFilter, true);
 
     if (tokensError) {
       throw tokensError;
