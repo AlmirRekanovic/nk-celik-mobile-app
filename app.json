@@ -9,11 +9,6 @@
     "newArchEnabled": true,
     "runtimeVersion": "2.1.0",
     "icon": "./assets/celik.fix.badge.png",
-    "splash": {
-      "image": "./assets/splashscreen.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#000000"
-    },
     "updates": {
       "url": "https://u.expo.dev/dff972e8-b326-44b6-ab97-685527ce10da"
     },
@@ -51,6 +46,14 @@
     "plugins": [
       "expo-router",
       "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/celik.fix.badge.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#000000"
+        }
+      ],
       [
         "expo-notifications",
         {
