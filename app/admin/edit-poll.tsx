@@ -109,12 +109,22 @@ export default function EditPollScreen() {
     setSaving(true);
     setError('');
 
-    const success = await updatePoll(poll.id, {
-      title: title.trim(),
-      description: description.trim(),
-      poll_type: pollType,
-      options,
-    });
+    if (!member) {
+      setError('Niste prijavljeni');
+      setSaving(false);
+      return;
+    }
+
+    const success = await updatePoll(
+      poll.id,
+      {
+        title: title.trim(),
+        description: description.trim(),
+        poll_type: pollType,
+        options,
+      },
+      member.id
+    );
 
     setSaving(false);
 

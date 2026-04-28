@@ -52,7 +52,8 @@ export default function AdminPollsScreen() {
   }, [member]);
 
   const handleToggleActive = async (pollId: string, currentStatus: boolean) => {
-    const success = await updatePoll(pollId, { is_active: !currentStatus });
+    if (!member) return;
+    const success = await updatePoll(pollId, { is_active: !currentStatus }, member.id);
     if (success) {
       await loadPolls();
     }
@@ -77,7 +78,8 @@ export default function AdminPollsScreen() {
   };
 
   const executePollDeletion = async (pollId: string) => {
-    const success = await deletePoll(pollId);
+    if (!member) return;
+    const success = await deletePoll(pollId, member.id);
     if (success) {
       await loadPolls();
     }

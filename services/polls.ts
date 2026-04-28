@@ -90,18 +90,22 @@ export async function getActivePolls(memberId?: string): Promise<PollWithVotes[]
   }
 }
 
-export async function getAllPolls(createdBy?: string): Promise<PollWithVotes[]> {
+export async function getAllPolls(adminMemberId?: string): Promise<PollWithVotes[]> {
   try {
-    let query = supabase
+    if (adminMemberId) {
+      const { error: contextError } = await supabase.rpc('set_member_context', {
+        member_id: adminMemberId,
+      });
+
+      if (contextError) {
+        console.error('Error setting member context:', contextError);
+      }
+    }
+
+    const { data: polls, error: pollsError } = await supabase
       .from('polls')
       .select('*')
       .order('created_at', { ascending: false });
-
-    if (createdBy) {
-      query = query.eq('created_by', createdBy);
-    }
-
-    const { data: polls, error: pollsError } = await query;
 
     if (pollsError) {
       console.error('Error fetching all polls:', pollsError);
@@ -197,6 +201,15 @@ export async function createPoll(
   endsAt?: string
 ): Promise<Poll | null> {
   try {
+    const { error: contextError } = await supabase.rpc('set_member_context', {
+      member_id: createdBy,
+    });
+
+    if (contextError) {
+      console.error('Error setting member context:', contextError);
+      return null;
+    }
+
     const { data, error } = await supabase
       .from('polls')
       .insert({
@@ -267,9 +280,19 @@ async function sendPollNotification(pollId: string, title: string, description: 
 
 export async function updatePoll(
   pollId: string,
-  updates: Partial<Poll>
+  updates: Partial<Poll>,
+  memberId: string
 ): Promise<boolean> {
   try {
+    const { error: contextError } = await supabase.rpc('set_member_context', {
+      member_id: memberId,
+    });
+
+    if (contextError) {
+      console.error('Error setting member context:', contextError);
+      return false;
+    }
+
     const { error } = await supabase
       .from('polls')
       .update(updates)
@@ -287,8 +310,17 @@ export async function updatePoll(
   }
 }
 
-export async function deletePoll(pollId: string): Promise<boolean> {
+export async function deletePoll(pollId: string, memberId: string): Promise<boolean> {
   try {
+    const { error: contextError } = await supabase.rpc('set_member_context', {
+      member_id: memberId,
+    });
+
+    if (contextError) {
+      console.error('Error setting member context:', contextError);
+      return false;
+    }
+
     const { error } = await supabase
       .from('polls')
       .delete()
