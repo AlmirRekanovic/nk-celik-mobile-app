@@ -92,21 +92,34 @@ Deno.serve(async (req: Request) => {
     const ticketsToInsert = [];
 
     for (const item of order.line_items) {
-      // Create one ticket per quantity
-      for (let i = 0; i < item.quantity; i++) {
-        // Extract event details from meta_data if available
-        let eventName = item.name;
-        let eventDate = null;
+      let eventName = item.name;
+      let eventDate: string | null = null;
+      let isSeasonTicket = false;
 
-        if (item.meta_data) {
-          const eventNameMeta = item.meta_data.find(m => m.key === 'event_name' || m.key === '_event_name');
-          const eventDateMeta = item.meta_data.find(m => m.key === 'event_date' || m.key === '_event_date');
+      if (item.meta_data) {
+        const eventNameMeta = item.meta_data.find(m => m.key === 'event_name' || m.key === '_event_name');
+        const eventDateMeta = item.meta_data.find(m => m.key === 'event_date' || m.key === '_event_date');
+        const seasonFlagMeta = item.meta_data.find(m => m.key === 'is_season_ticket' || m.key === '_is_season_ticket');
+        const categoryMeta = item.meta_data.find(m => m.key === '_product_categories' || m.key === 'product_categories');
 
-          if (eventNameMeta) eventName = eventNameMeta.value;
-          if (eventDateMeta) eventDate = eventDateMeta.value;
+        if (eventNameMeta) eventName = eventNameMeta.value;
+        if (eventDateMeta) eventDate = eventDateMeta.value;
+
+        if (seasonFlagMeta) {
+          const v = String(seasonFlagMeta.value).toLowerCase().trim();
+          isSeasonTicket = v === 'true' || v === '1' || v === 'yes' || v === 'on';
         }
 
-        // Generate QR code in format: orderNumber-sequenceNumber
+        if (!isSeasonTicket && categoryMeta) {
+          isSeasonTicket = /sezonsk|season/i.test(String(categoryMeta.value));
+        }
+      }
+
+      if (!isSeasonTicket) {
+        isSeasonTicket = /sezonsk|season/i.test(item.name);
+      }
+
+      for (let i = 0; i < item.quantity; i++) {
         const qrCode = `${order.number}-${i + 1}`;
 
         ticketsToInsert.push({
@@ -120,6 +133,7 @@ Deno.serve(async (req: Request) => {
           event_name: eventName,
           event_date: eventDate,
           status: 'active',
+          is_season_ticket: isSeasonTicket,
         });
       }
     }

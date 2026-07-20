@@ -21,13 +21,30 @@ export async function fetchTicketByCode(ticketCode: string): Promise<Ticket | nu
   }
 }
 
-export async function fetchMemberTickets(memberId: string): Promise<Ticket[]> {
+type TicketKind = 'match' | 'season' | 'all';
+
+function applyKind(
+  query: ReturnType<ReturnType<typeof supabase.from>['select']>,
+  kind: TicketKind
+) {
+  if (kind === 'season') return query.eq('is_season_ticket', true);
+  if (kind === 'match') return query.eq('is_season_ticket', false);
+  return query;
+}
+
+export async function fetchMemberTickets(
+  memberId: string,
+  kind: TicketKind = 'all'
+): Promise<Ticket[]> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('tickets')
       .select('*')
-      .eq('member_id', memberId)
-      .order('created_at', { ascending: false });
+      .eq('member_id', memberId);
+
+    query = applyKind(query, kind);
+
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching member tickets:', error);
@@ -41,13 +58,19 @@ export async function fetchMemberTickets(memberId: string): Promise<Ticket[]> {
   }
 }
 
-export async function fetchTicketsByEmail(email: string): Promise<Ticket[]> {
+export async function fetchTicketsByEmail(
+  email: string,
+  kind: TicketKind = 'all'
+): Promise<Ticket[]> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('tickets')
       .select('*')
-      .eq('customer_email', email)
-      .order('created_at', { ascending: false });
+      .eq('customer_email', email);
+
+    query = applyKind(query, kind);
+
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching tickets by email:', error);
@@ -199,6 +222,7 @@ export async function createTicket(ticketData: Partial<Ticket>): Promise<Ticket 
         event_name: ticketData.event_name || '',
         event_date: ticketData.event_date,
         status: 'active',
+        is_season_ticket: ticketData.is_season_ticket ?? false,
       })
       .select()
       .single();

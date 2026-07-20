@@ -256,3 +256,23 @@ export const Send = ({ size = 24, color = '#000', strokeWidth = 2, style }: Icon
     <Polyline points="22 2 15 22 11 13 2 9 22 2" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" fill="none" />
   </Svg>
 );
+
+export const Menu = ({ size = 24, color = '#000', strokeWidth = 2, style }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
+    <Line x1={3} y1={6} x2={21} y2={6} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    <Line x1={3} y1={12} x2={21} y2={12} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    <Line x1={3} y1={18} x2={21} y2={18} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+  </Svg>
+);
+
+export const Star = ({ size = 24, color = '#000', strokeWidth = 2, style }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
+    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+  </Svg>
+);
+
+export const ChevronRight = ({ size = 24, color = '#000', strokeWidth = 2, style }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
+    <Polyline points="9 18 15 12 9 6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+  </Svg>
+);
