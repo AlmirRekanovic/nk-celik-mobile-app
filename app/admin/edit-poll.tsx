@@ -109,12 +109,18 @@ export default function EditPollScreen() {
     setSaving(true);
     setError('');
 
+    if (!member) {
+      setError('Sesija nije aktivna');
+      setSaving(false);
+      return;
+    }
+
     const success = await updatePoll(poll.id, {
       title: title.trim(),
       description: description.trim(),
       poll_type: pollType,
       options,
-    });
+    }, member.id);
 
     setSaving(false);
 
