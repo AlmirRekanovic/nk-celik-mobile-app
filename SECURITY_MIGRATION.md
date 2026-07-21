@@ -9,7 +9,7 @@ builds intentionally lose access once the migration runs.
 
 | Area | Before | After |
 |---|---|---|
-| Login | Client queried `members` directly; member number acted as password against a publicly readable table | `member-login` edge function verifies credentials server-side and returns a signed JWT (30-day expiry, silently renewed) |
+| Login | Client queried `members` directly; member number acted as password against a publicly readable table | `member-login` edge function verifies credentials server-side and returns a signed JWT (30-day expiry, silently renewed). Accepts email+member# OR, for members with no email on file, first+last name+member# |
 | RLS | `USING (true)` for the anon role on members, tickets, check-ins; identity via spoofable `set_member_context()` | Least-privilege policies keyed on `auth.uid()`; `set_member_context` removed |
 | Members table | Fully readable/writable with the anon key (names, emails, member numbers, admin flags) | Not accessible to clients; chat names come from the `member_profiles` view (safe columns only) |
 | Ticket check-in | Client-side read → insert → update (racy, anon-writable) | Atomic admin-only `check_in_ticket()` RPC |
@@ -70,8 +70,9 @@ member JWT) on top of the gateway check.
   `X-Webhook-Secret: <WORDPRESS_WEBHOOK_SECRET>`.
 - **Revoke the old WooCommerce REST API consumer key/secret**
   (WooCommerce → Settings → Advanced → REST API). They were embedded in
-  previously shipped app bundles and must be treated as leaked. The app no
-  longer uses them.
+  previously shipped app bundles **and were hardcoded in `eas.json`** (now
+  removed), so they must be treated as leaked. The app no longer uses them
+  (the shop is a WebView).
 
 ### 5. Ship the app update
 

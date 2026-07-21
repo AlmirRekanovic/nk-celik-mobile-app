@@ -1,17 +1,41 @@
 import { supabase } from './supabase';
 import { ChatMessage } from '@/types/chat';
 
-// Sender names come from the member_profiles view (safe columns only) —
-// the members table itself is not readable by clients.
-const MESSAGE_SELECT = `
-  *,
-  member:member_profiles(chat_nickname, first_name, last_name)
-`;
+// Sender names come from the member_profiles view (safe columns only) — the
+// members table itself is not readable by clients. We fetch profiles in a
+// separate query and merge, rather than a PostgREST embed, so this does not
+// depend on PostgREST being able to infer a relationship to the view.
+type MemberProfile = { id: string; chat_nickname: string; first_name: string; last_name: string };
+
+async function fetchProfiles(memberIds: string[]): Promise<Map<string, MemberProfile>> {
+  const map = new Map<string, MemberProfile>();
+  const unique = [...new Set(memberIds)].filter(Boolean);
+  if (unique.length === 0) return map;
+
+  const { data, error } = await supabase
+    .from('member_profiles')
+    .select('id, chat_nickname, first_name, last_name')
+    .in('id', unique);
+
+  if (error) {
+    console.error('Failed to load member profiles:', error);
+    return map;
+  }
+  (data || []).forEach(p => map.set(p.id, p));
+  return map;
+}
+
+function attachProfile(message: ChatMessage, profiles: Map<string, MemberProfile>): ChatMessage {
+  const p = profiles.get(message.member_id);
+  return p
+    ? { ...message, member: { chat_nickname: p.chat_nickname, first_name: p.first_name, last_name: p.last_name } }
+    : message;
+}
 
 async function fetchMessageById(id: string): Promise<ChatMessage | null> {
   const { data, error } = await supabase
     .from('chat_messages')
-    .select(MESSAGE_SELECT)
+    .select('*')
     .eq('id', id)
     .maybeSingle();
 
@@ -19,20 +43,26 @@ async function fetchMessageById(id: string): Promise<ChatMessage | null> {
     console.error('Failed to hydrate chat message:', error);
     return null;
   }
-  return data;
+  if (!data) return null;
+
+  const profiles = await fetchProfiles([data.member_id]);
+  return attachProfile(data, profiles);
 }
 
 export const chatService = {
   async getMessages(limit = 100): Promise<ChatMessage[]> {
     const { data, error } = await supabase
       .from('chat_messages')
-      .select(MESSAGE_SELECT)
+      .select('*')
       .eq('is_deleted', false)
       .order('created_at', { ascending: false })
       .limit(limit);
 
     if (error) throw error;
-    return (data || []).reverse();
+
+    const messages = (data || []).reverse();
+    const profiles = await fetchProfiles(messages.map(m => m.member_id));
+    return messages.map(m => attachProfile(m, profiles));
   },
 
   async sendMessage(message: string, memberId: string): Promise<ChatMessage> {
@@ -42,11 +72,13 @@ export const chatService = {
         member_id: memberId,
         message: message.trim(),
       })
-      .select(MESSAGE_SELECT)
+      .select('*')
       .single();
 
     if (error) throw error;
-    return data;
+
+    const profiles = await fetchProfiles([data.member_id]);
+    return attachProfile(data, profiles);
   },
 
   async deleteMessage(messageId: string): Promise<void> {
