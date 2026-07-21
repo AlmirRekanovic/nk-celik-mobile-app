@@ -33,7 +33,10 @@ Deno.serve(async (req: Request) => {
 
     const { title, body, data, type }: PushNotificationRequest = await req.json();
 
+    console.log(`[send-push] request: type=${type}, title="${title}"`);
+
     if (!title || !body || !type) {
+      console.warn("[send-push] rejecting: missing required fields");
       return new Response(
         JSON.stringify({ error: "Missing required fields: title, body, type" }),
         {
@@ -56,10 +59,14 @@ Deno.serve(async (req: Request) => {
       .eq(typeFilter, true);
 
     if (tokensError) {
+      console.error("[send-push] token query failed:", tokensError);
       throw tokensError;
     }
 
+    console.log(`[send-push] tokens found matching (enabled=true, ${typeFilter}=true): ${tokens?.length ?? 0}`);
+
     if (!tokens || tokens.length === 0) {
+      console.log("[send-push] no eligible tokens — returning 200 with no-op");
       return new Response(
         JSON.stringify({ message: "No active push tokens found" }),
         {
@@ -143,6 +150,8 @@ Deno.serve(async (req: Request) => {
         console.log(`Pruned ${deadTokens.length} dead push tokens`);
       }
     }
+
+    console.log(`[send-push] done: sent=${messages.length}, pruned=${deadTokens.length}`);
 
     return new Response(
       JSON.stringify({
