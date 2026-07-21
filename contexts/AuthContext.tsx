@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { Member, AuthState } from '@/types/auth';
 import { getStoredMember, isGuestMode, loginMember, loginMemberByEmail, loginWithEmailAndPassword, setGuestMode, logout } from '@/services/auth';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '@/services/notifications';
@@ -33,18 +34,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (member?.id && Platform.OS !== 'web') {
-      checkAndShowNotificationPrompt();
+      handleNotificationSetup(member.id);
     }
   }, [member?.id]);
 
-  const checkAndShowNotificationPrompt = async () => {
+  const handleNotificationSetup = async (memberId: string) => {
     try {
+      // If OS permission is already granted, register (or re-register) the
+      // token unconditionally. This handles the case where the user tapped
+      // "Allow" on a previous install / previous login — we don't want to
+      // rely on the AsyncStorage prompt flag to gate token registration.
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status === 'granted') {
+        registerForPushNotificationsAsync(memberId).catch(error => {
+          console.log('Auto push registration failed:', error);
+        });
+        return;
+      }
+
+      // Permission not yet granted — show the in-app modal the first time
+      // (once per install), then let the user grant OS permission from there.
       const hasPrompted = await AsyncStorage.getItem(NOTIFICATION_PROMPT_KEY);
       if (!hasPrompted) {
         setShowNotificationModal(true);
       }
     } catch (error) {
-      console.error('Error checking notification prompt:', error);
+      console.error('Error setting up notifications:', error);
     }
   };
 
