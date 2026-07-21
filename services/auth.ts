@@ -1,131 +1,81 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from './supabase';
 import { Member } from '@/types/auth';
+import {
+  setStoredSession,
+  clearStoredSession,
+  getStoredMember,
+  tokenNeedsRefresh,
+} from './session';
 
-const AUTH_STORAGE_KEY = 'NK_CELIK_AUTH_STATE';
 const GUEST_MODE_KEY = 'NK_CELIK_GUEST_MODE';
 
-export async function loginMember(firstName: string, lastName: string, memberId: string): Promise<Member | null> {
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+
+export { getStoredMember };
+
+/**
+ * Verifies email + member number against the member-login edge function.
+ * Credentials are never checked client-side; the members table is not
+ * readable with the anon key at all.
+ */
+export async function loginWithEmailAndPassword(email: string, memberId: string): Promise<Member | null> {
   try {
-    const { data, error } = await supabase
-      .from('members')
-      .select('*')
-      .eq('first_name', firstName)
-      .eq('last_name', lastName)
-      .eq('member_id', memberId)
-      .maybeSingle();
+    const response = await fetch(`${supabaseUrl}/functions/v1/member-login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({ email, member_id: memberId }),
+    });
 
-    if (error) {
-      console.error('Login error:', error);
+    if (!response.ok) {
+      if (response.status !== 401) {
+        console.error('Login failed with status:', response.status);
+      }
       return null;
     }
 
-    if (!data) {
-      return null;
-    }
+    const { token, expires_at, member } = await response.json();
+    if (!token || !member) return null;
 
-    await supabase
-      .from('members')
-      .update({ last_login_at: new Date().toISOString() })
-      .eq('id', data.id);
-
-    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
+    await setStoredSession(member, token, expires_at);
     await AsyncStorage.removeItem(GUEST_MODE_KEY);
-
-    return data;
+    return member;
   } catch (error) {
     console.error('Login error:', error);
     return null;
   }
 }
 
-export async function loginMemberByEmail(email: string): Promise<Member | null> {
+/**
+ * Silently re-issues the JWT using the stored credentials (email + member
+ * number) when it is expired or close to expiring. Members who stay logged
+ * in never see a login screen again; if the device is offline the old token
+ * simply keeps being used until the next successful refresh.
+ */
+export async function refreshSessionIfNeeded(): Promise<void> {
   try {
-    const { data, error } = await supabase
-      .from('members')
-      .select('*')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Login error:', error);
-      return null;
+    if (!(await tokenNeedsRefresh())) return;
+    const member = await getStoredMember();
+    if (member?.email && member?.member_id) {
+      await loginWithEmailAndPassword(member.email, member.member_id);
     }
-
-    if (!data) {
-      return null;
-    }
-
-    await supabase
-      .from('members')
-      .update({ last_login_at: new Date().toISOString() })
-      .eq('id', data.id);
-
-    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
-    await AsyncStorage.removeItem(GUEST_MODE_KEY);
-
-    return data;
   } catch (error) {
-    console.error('Login by email error:', error);
-    return null;
-  }
-}
-
-export async function loginWithEmailAndPassword(email: string, password: string): Promise<Member | null> {
-  try {
-    const { data, error } = await supabase
-      .from('members')
-      .select('*')
-      .eq('email', email)
-      .eq('member_id', password)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Login error:', error);
-      return null;
-    }
-
-    if (!data) {
-      return null;
-    }
-
-    await supabase
-      .from('members')
-      .update({ last_login_at: new Date().toISOString() })
-      .eq('id', data.id);
-
-    await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
-    await AsyncStorage.removeItem(GUEST_MODE_KEY);
-
-    return data;
-  } catch (error) {
-    console.error('Login with email and password error:', error);
-    return null;
+    console.error('Session refresh error:', error);
   }
 }
 
 export async function setGuestMode(): Promise<void> {
   await AsyncStorage.setItem(GUEST_MODE_KEY, 'true');
-  await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
-}
-
-export async function getStoredMember(): Promise<Member | null> {
-  try {
-    const stored = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return null;
-  } catch (error) {
-    console.error('Error getting stored member:', error);
-    return null;
-  }
+  await clearStoredSession();
 }
 
 export async function isGuestMode(): Promise<boolean> {
   try {
-    const guestMode = await AsyncStorage.getItem(GUEST_MODE_KEY);
-    return guestMode === 'true';
+    return (await AsyncStorage.getItem(GUEST_MODE_KEY)) === 'true';
   } catch (error) {
     console.error('Error checking guest mode:', error);
     return false;
@@ -133,36 +83,6 @@ export async function isGuestMode(): Promise<boolean> {
 }
 
 export async function logout(): Promise<void> {
-  await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+  await clearStoredSession();
   await AsyncStorage.removeItem(GUEST_MODE_KEY);
-}
-
-export async function createMember(
-  memberId: string,
-  firstName: string,
-  lastName: string,
-  isAdmin: boolean = false
-): Promise<Member | null> {
-  try {
-    const { data, error } = await supabase
-      .from('members')
-      .insert({
-        member_id: memberId,
-        first_name: firstName,
-        last_name: lastName,
-        is_admin: isAdmin,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Create member error:', error);
-      return null;
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Create member error:', error);
-    return null;
-  }
 }

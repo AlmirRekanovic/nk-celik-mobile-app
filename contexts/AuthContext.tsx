@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Member, AuthState } from '@/types/auth';
-import { getStoredMember, isGuestMode, loginMember, loginMemberByEmail, loginWithEmailAndPassword, setGuestMode, logout } from '@/services/auth';
+import { getStoredMember, isGuestMode, loginWithEmailAndPassword, refreshSessionIfNeeded, setGuestMode, logout } from '@/services/auth';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '@/services/notifications';
 import NotificationPermissionModal from '@/components/NotificationPermissionModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,8 +10,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const NOTIFICATION_PROMPT_KEY = 'NK_CELIK_NOTIFICATION_PROMPTED';
 
 interface AuthContextType extends AuthState {
-  login: (firstName: string, lastName: string, memberId: string) => Promise<boolean>;
-  loginWithEmail: (email: string) => Promise<boolean>;
   loginWithPassword: (email: string, password: string) => Promise<boolean>;
   continueAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,11 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (member?.id && Platform.OS !== 'web') {
-      handleNotificationSetup(member.id);
+      handleNotificationSetup();
     }
   }, [member?.id]);
 
-  const handleNotificationSetup = async (memberId: string) => {
+  const handleNotificationSetup = async () => {
     try {
       // If OS permission is already granted, register (or re-register) the
       // token unconditionally. This handles the case where the user tapped
@@ -46,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // rely on the AsyncStorage prompt flag to gate token registration.
       const { status } = await Notifications.getPermissionsAsync();
       if (status === 'granted') {
-        registerForPushNotificationsAsync(memberId).catch(error => {
+        registerForPushNotificationsAsync().catch(error => {
           console.log('Auto push registration failed:', error);
         });
         return;
@@ -67,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setShowNotificationModal(false);
     await AsyncStorage.setItem(NOTIFICATION_PROMPT_KEY, 'true');
     if (member?.id) {
-      registerForPushNotificationsAsync(member.id).catch(error => {
+      registerForPushNotificationsAsync().catch(error => {
         console.log('Failed to register for push notifications:', error);
       });
     }
@@ -79,62 +77,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loadAuthState = async () => {
-    console.log('[AuthContext] Loading auth state');
-
-    const timeoutPromise = new Promise<void>((resolve) => {
-      setTimeout(() => {
-        console.warn('[AuthContext] Loading timeout - continuing anyway');
-        resolve();
-      }, 2000);
-    });
-
     try {
-      await Promise.race([
-        (async () => {
-          const storedMember = await getStoredMember();
-          const guestMode = await isGuestMode();
+      const storedMember = await getStoredMember();
+      const guestMode = await isGuestMode();
 
-          console.log('[AuthContext] Stored member:', !!storedMember, 'Guest mode:', guestMode);
-
-          if (storedMember) {
-            setMember(storedMember);
-            setIsGuest(false);
-          } else if (guestMode) {
-            setIsGuest(true);
-          }
-        })(),
-        timeoutPromise
-      ]);
+      if (storedMember) {
+        setMember(storedMember);
+        setIsGuest(false);
+        // Re-issue the JWT in the background when it's expired or aging out;
+        // existing installs (which have a member but no token yet) get their
+        // first token through this same path.
+        refreshSessionIfNeeded().catch(error => {
+          console.error('[AuthContext] Session refresh failed:', error);
+        });
+      } else if (guestMode) {
+        setIsGuest(true);
+      }
     } catch (error) {
       console.error('[AuthContext] Error loading auth state:', error);
     } finally {
       setLoading(false);
-      console.log('[AuthContext] Auth state loaded, loading:', false);
     }
-  };
-
-  const login = async (firstName: string, lastName: string, memberId: string): Promise<boolean> => {
-    const loggedInMember = await loginMember(firstName, lastName, memberId);
-
-    if (loggedInMember) {
-      setMember(loggedInMember);
-      setIsGuest(false);
-      return true;
-    }
-
-    return false;
-  };
-
-  const loginWithEmail = async (email: string): Promise<boolean> => {
-    const loggedInMember = await loginMemberByEmail(email);
-
-    if (loggedInMember) {
-      setMember(loggedInMember);
-      setIsGuest(false);
-      return true;
-    }
-
-    return false;
   };
 
   const loginWithPassword = async (email: string, password: string): Promise<boolean> => {
@@ -167,8 +130,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         member,
         isGuest,
         isAuthenticated: !!member || isGuest,
-        login,
-        loginWithEmail,
         loginWithPassword,
         continueAsGuest,
         signOut,

@@ -120,7 +120,7 @@ export default function EditPollScreen() {
       description: description.trim(),
       poll_type: pollType,
       options,
-    }, member.id);
+    });
 
     setSaving(false);
 

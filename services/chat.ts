@@ -1,9 +1,11 @@
 import { supabase } from './supabase';
 import { ChatMessage } from '@/types/chat';
 
+// Sender names come from the member_profiles view (safe columns only) —
+// the members table itself is not readable by clients.
 const MESSAGE_SELECT = `
   *,
-  member:members(chat_nickname, first_name, last_name)
+  member:member_profiles(chat_nickname, first_name, last_name)
 `;
 
 async function fetchMessageById(id: string): Promise<ChatMessage | null> {
@@ -34,15 +36,6 @@ export const chatService = {
   },
 
   async sendMessage(message: string, memberId: string): Promise<ChatMessage> {
-    const { error: contextError } = await supabase.rpc('set_member_context', {
-      member_id: memberId,
-    });
-
-    if (contextError) {
-      console.error('Failed to set member context:', contextError);
-      throw contextError;
-    }
-
     const { data, error } = await supabase
       .from('chat_messages')
       .insert({
@@ -56,16 +49,7 @@ export const chatService = {
     return data;
   },
 
-  async deleteMessage(messageId: string, memberId: string): Promise<void> {
-    const { error: contextError } = await supabase.rpc('set_member_context', {
-      member_id: memberId,
-    });
-
-    if (contextError) {
-      console.error('Failed to set member context:', contextError);
-      throw contextError;
-    }
-
+  async deleteMessage(messageId: string): Promise<void> {
     const { error } = await supabase
       .from('chat_messages')
       .update({ is_deleted: true })
@@ -73,30 +57,6 @@ export const chatService = {
 
     if (error) {
       console.error('Failed to delete message:', error);
-      throw error;
-    }
-  },
-
-  async updateMessage(messageId: string, newMessage: string, memberId: string): Promise<void> {
-    const { error: contextError } = await supabase.rpc('set_member_context', {
-      member_id: memberId,
-    });
-
-    if (contextError) {
-      console.error('Failed to set member context:', contextError);
-      throw contextError;
-    }
-
-    const { error } = await supabase
-      .from('chat_messages')
-      .update({
-        message: newMessage.trim(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', messageId);
-
-    if (error) {
-      console.error('Failed to update message:', error);
       throw error;
     }
   },

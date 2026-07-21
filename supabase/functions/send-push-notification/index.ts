@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { verifyJwt } from "../_shared/jwt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +31,38 @@ Deno.serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Only the service role (news-poller cron) or an admin member may
+    // broadcast. Anything else — anon key included — is rejected.
+    const jwtSecret = Deno.env.get("JWT_SECRET") ?? Deno.env.get("SUPABASE_JWT_SECRET");
+    if (!jwtSecret) {
+      console.error("[send-push] JWT_SECRET is not configured");
+      return new Response(JSON.stringify({ error: "Server misconfigured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const bearer = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+    const claims = await verifyJwt(bearer, jwtSecret);
+    let authorized = claims?.role === "service_role";
+
+    if (!authorized && claims?.sub) {
+      const { data: caller } = await supabase
+        .from("members")
+        .select("is_admin")
+        .eq("id", claims.sub)
+        .maybeSingle();
+      authorized = caller?.is_admin === true;
+    }
+
+    if (!authorized) {
+      console.warn("[send-push] rejected unauthorized caller");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { title, body, data, type }: PushNotificationRequest = await req.json();
 

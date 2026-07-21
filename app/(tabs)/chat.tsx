@@ -147,7 +147,7 @@ export default function ChatScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await chatService.deleteMessage(messageId, user.id);
+              await chatService.deleteMessage(messageId);
               setMessages((prev) => prev.filter((m) => m.id !== messageId));
             } catch (error) {
               console.error('Failed to delete message:', error);

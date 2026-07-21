@@ -85,7 +85,7 @@ export default function TicketListScreen({ kind, title, emptySubtitle, HeaderIco
         style: 'destructive',
         onPress: async () => {
           if (!member) return;
-          const success = await deleteTicket(ticketId, member.id);
+          const success = await deleteTicket(ticketId);
           if (success) {
             setTickets(prev => prev.filter(t => t.id !== ticketId));
             Alert.alert('Uspjeh', 'Karta je obrisana');
@@ -117,7 +117,7 @@ export default function TicketListScreen({ kind, title, emptySubtitle, HeaderIco
             if (!member) return;
             // deleteUsedTickets deletes across all tickets of this member;
             // we filter the visible list to the current kind afterwards.
-            const deletedCount = await deleteUsedTickets(member.id);
+            const deletedCount = await deleteUsedTickets();
             if (deletedCount > 0) {
               setTickets(prev => prev.filter(t => t.status !== 'used'));
               Alert.alert(

@@ -100,7 +100,7 @@ export default function CheckInScreen() {
     setScanResult(null);
 
     try {
-      const result = await checkInTicket(data, member.id);
+      const result = await checkInTicket(data);
 
       setScanResult({
         type: result.success ? 'success' : 'error',

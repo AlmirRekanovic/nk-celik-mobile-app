@@ -1,5 +1,60 @@
 import { supabase } from './supabase';
 import { Poll, PollVote, PollWithVotes } from '@/types/auth';
+import { getAccessToken } from './session';
+
+// Vote totals come from the poll_vote_counts view so raw per-member votes
+// never leave the database; a member's own vote is the only row RLS lets
+// them read from poll_votes.
+
+interface VoteCountRow {
+  poll_id: string;
+  option_value: string;
+  vote_count: number;
+}
+
+function buildPollWithVotes(
+  poll: Poll,
+  counts: VoteCountRow[],
+  userVote?: PollVote
+): PollWithVotes {
+  const options = Array.isArray(poll.options) ? poll.options : [];
+  const voteCounts: Record<string, number> = {};
+
+  options.forEach(option => {
+    voteCounts[option] = 0;
+  });
+
+  let totalVotes = 0;
+  counts
+    .filter(c => c.poll_id === poll.id)
+    .forEach(c => {
+      voteCounts[c.option_value] = c.vote_count;
+      totalVotes += c.vote_count;
+    });
+
+  return {
+    ...poll,
+    options,
+    votes: [],
+    user_vote: userVote,
+    vote_counts: voteCounts,
+    total_votes: totalVotes,
+  };
+}
+
+async function fetchVoteCounts(pollIds: string[]): Promise<VoteCountRow[]> {
+  if (pollIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('poll_vote_counts')
+    .select('*')
+    .in('poll_id', pollIds);
+
+  if (error) {
+    console.error('Error fetching vote counts:', error);
+    return [];
+  }
+  return data || [];
+}
 
 export async function getPoll(pollId: string): Promise<Poll | null> {
   try {
@@ -45,63 +100,29 @@ export async function getActivePolls(memberId?: string): Promise<PollWithVotes[]
       return [];
     }
 
-    const { data: allVotes, error: votesError } = await supabase
-      .from('poll_votes')
-      .select('*')
-      .in('poll_id', polls.map(p => p.id));
+    const pollIds = polls.map(p => p.id);
+    const counts = await fetchVoteCounts(pollIds);
 
-    if (votesError) {
-      console.error('Error fetching votes:', votesError);
+    let ownVotes: PollVote[] = [];
+    if (memberId) {
+      const { data } = await supabase
+        .from('poll_votes')
+        .select('*')
+        .in('poll_id', pollIds);
+      ownVotes = data || [];
     }
 
-    const pollsWithVotes: PollWithVotes[] = polls.map(poll => {
-      const pollVotes = allVotes?.filter(v => v.poll_id === poll.id) || [];
-      const userVote = memberId ? pollVotes.find(v => v.member_id === memberId) : undefined;
-
-      const voteCounts: Record<string, number> = {};
-      const options = Array.isArray(poll.options) ? poll.options : [];
-
-      options.forEach((option: string) => {
-        voteCounts[option] = 0;
-      });
-
-      pollVotes.forEach(vote => {
-        if (voteCounts[vote.option_value] !== undefined) {
-          voteCounts[vote.option_value]++;
-        } else {
-          voteCounts[vote.option_value] = 1;
-        }
-      });
-
-      return {
-        ...poll,
-        options,
-        votes: pollVotes,
-        user_vote: userVote,
-        vote_counts: voteCounts,
-        total_votes: pollVotes.length,
-      };
-    });
-
-    return pollsWithVotes;
+    return polls.map(poll =>
+      buildPollWithVotes(poll, counts, ownVotes.find(v => v.poll_id === poll.id))
+    );
   } catch (error) {
     console.error('Error getting active polls:', error);
     return [];
   }
 }
 
-export async function getAllPolls(adminMemberId?: string): Promise<PollWithVotes[]> {
+export async function getAllPolls(): Promise<PollWithVotes[]> {
   try {
-    if (adminMemberId) {
-      const { error: contextError } = await supabase.rpc('set_member_context', {
-        member_id: adminMemberId,
-      });
-
-      if (contextError) {
-        console.error('Error setting member context:', contextError);
-      }
-    }
-
     const { data: polls, error: pollsError } = await supabase
       .from('polls')
       .select('*')
@@ -116,43 +137,8 @@ export async function getAllPolls(adminMemberId?: string): Promise<PollWithVotes
       return [];
     }
 
-    const { data: allVotes, error: votesError } = await supabase
-      .from('poll_votes')
-      .select('*')
-      .in('poll_id', polls.map(p => p.id));
-
-    if (votesError) {
-      console.error('Error fetching votes:', votesError);
-    }
-
-    const pollsWithVotes: PollWithVotes[] = polls.map(poll => {
-      const pollVotes = allVotes?.filter(v => v.poll_id === poll.id) || [];
-
-      const voteCounts: Record<string, number> = {};
-      const options = Array.isArray(poll.options) ? poll.options : [];
-
-      options.forEach((option: string) => {
-        voteCounts[option] = 0;
-      });
-
-      pollVotes.forEach(vote => {
-        if (voteCounts[vote.option_value] !== undefined) {
-          voteCounts[vote.option_value]++;
-        } else {
-          voteCounts[vote.option_value] = 1;
-        }
-      });
-
-      return {
-        ...poll,
-        options,
-        votes: pollVotes,
-        vote_counts: voteCounts,
-        total_votes: pollVotes.length,
-      };
-    });
-
-    return pollsWithVotes;
+    const counts = await fetchVoteCounts(polls.map(p => p.id));
+    return polls.map(poll => buildPollWithVotes(poll, counts));
   } catch (error) {
     console.error('Error getting all polls:', error);
     return [];
@@ -161,17 +147,6 @@ export async function getAllPolls(adminMemberId?: string): Promise<PollWithVotes
 
 export async function castVote(pollId: string, memberId: string, optionValue: string): Promise<boolean> {
   try {
-    const { data: existingVote } = await supabase
-      .from('poll_votes')
-      .select('*')
-      .eq('poll_id', pollId)
-      .eq('member_id', memberId)
-      .maybeSingle();
-
-    if (existingVote) {
-      return false;
-    }
-
     const { error } = await supabase
       .from('poll_votes')
       .insert({
@@ -181,7 +156,10 @@ export async function castVote(pollId: string, memberId: string, optionValue: st
       });
 
     if (error) {
-      console.error('Error casting vote:', error);
+      // 23505 = unique violation: this member already voted on this poll.
+      if (error.code !== '23505') {
+        console.error('Error casting vote:', error);
+      }
       return false;
     }
 
@@ -201,15 +179,6 @@ export async function createPoll(
   endsAt?: string
 ): Promise<Poll | null> {
   try {
-    const { error: contextError } = await supabase.rpc('set_member_context', {
-      member_id: createdBy,
-    });
-
-    if (contextError) {
-      console.error('Error setting member context:', contextError);
-      return null;
-    }
-
     const { data, error } = await supabase
       .from('polls')
       .insert({
@@ -246,9 +215,12 @@ async function sendPollNotification(pollId: string, title: string, description: 
   try {
     const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+    // The endpoint only accepts admin member JWTs (or the service role);
+    // the anon key alone is rejected.
+    const accessToken = await getAccessToken();
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Supabase credentials not configured');
+    if (!supabaseUrl || !supabaseAnonKey || !accessToken) {
+      console.error('Cannot send poll notification: missing credentials');
       return;
     }
 
@@ -256,7 +228,8 @@ async function sendPollNotification(pollId: string, title: string, description: 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseAnonKey}`,
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         title: 'Nova anketa! 📊',
@@ -278,21 +251,8 @@ async function sendPollNotification(pollId: string, title: string, description: 
   }
 }
 
-export async function updatePoll(
-  pollId: string,
-  updates: Partial<Poll>,
-  memberId: string
-): Promise<boolean> {
+export async function updatePoll(pollId: string, updates: Partial<Poll>): Promise<boolean> {
   try {
-    const { error: contextError } = await supabase.rpc('set_member_context', {
-      member_id: memberId,
-    });
-
-    if (contextError) {
-      console.error('Error setting member context:', contextError);
-      return false;
-    }
-
     const { error } = await supabase
       .from('polls')
       .update(updates)
@@ -310,17 +270,8 @@ export async function updatePoll(
   }
 }
 
-export async function deletePoll(pollId: string, memberId: string): Promise<boolean> {
+export async function deletePoll(pollId: string): Promise<boolean> {
   try {
-    const { error: contextError } = await supabase.rpc('set_member_context', {
-      member_id: memberId,
-    });
-
-    if (contextError) {
-      console.error('Error setting member context:', contextError);
-      return false;
-    }
-
     const { error } = await supabase
       .from('polls')
       .delete()

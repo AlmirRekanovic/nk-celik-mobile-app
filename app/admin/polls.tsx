@@ -41,7 +41,7 @@ export default function AdminPollsScreen() {
 
   const loadPolls = async () => {
     if (!member) return;
-    const allPolls = await getAllPolls(member.id);
+    const allPolls = await getAllPolls();
     setPolls(allPolls);
   };
 
@@ -53,7 +53,7 @@ export default function AdminPollsScreen() {
 
   const handleToggleActive = async (pollId: string, currentStatus: boolean) => {
     if (!member) return;
-    const success = await updatePoll(pollId, { is_active: !currentStatus }, member.id);
+    const success = await updatePoll(pollId, { is_active: !currentStatus });
     if (success) {
       await loadPolls();
     }
@@ -79,7 +79,7 @@ export default function AdminPollsScreen() {
 
   const executePollDeletion = async (pollId: string) => {
     if (!member) return;
-    const success = await deletePoll(pollId, member.id);
+    const success = await deletePoll(pollId);
     if (success) {
       await loadPolls();
     }

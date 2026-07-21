@@ -60,7 +60,53 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const order: WooCommerceOrder = await req.json();
+    // WooCommerce signs every delivery with base64(HMAC-SHA256(raw body,
+    // webhook secret)). Without this check anyone who knows the URL can
+    // mint tickets by POSTing a fake "completed" order.
+    const webhookSecret = Deno.env.get('WC_WEBHOOK_SECRET');
+    if (!webhookSecret) {
+      console.error('WC_WEBHOOK_SECRET is not configured — rejecting all deliveries');
+      return new Response(
+        JSON.stringify({ error: 'Server misconfigured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const rawBody = await req.text();
+    const signature = req.headers.get('x-wc-webhook-signature') ?? '';
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(webhookSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const digest = new Uint8Array(
+      await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody))
+    );
+    const expected = btoa(String.fromCharCode(...digest));
+
+    if (signature.length !== expected.length ||
+        !signature.split('').every((c, i) => c === expected[i])) {
+      console.warn('Invalid webhook signature — rejecting');
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let order: WooCommerceOrder;
+    try {
+      order = JSON.parse(rawBody);
+    } catch {
+      // WooCommerce sends a form-encoded ping when the webhook is first
+      // saved; acknowledge it so the webhook activates.
+      console.log('Non-JSON delivery (webhook ping) — acknowledging');
+      return new Response(
+        JSON.stringify({ message: 'Ping acknowledged' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log('Received WooCommerce order:', order.id);
 
@@ -120,7 +166,12 @@ Deno.serve(async (req: Request) => {
       }
 
       for (let i = 0; i < item.quantity; i++) {
-        const qrCode = `${order.number}-${i + 1}`;
+        // Random suffix so codes can't be derived from sequential order
+        // numbers; the order number prefix stays for human readability.
+        const randomBytes = new Uint8Array(6);
+        crypto.getRandomValues(randomBytes);
+        const suffix = Array.from(randomBytes, b => b.toString(16).padStart(2, '0')).join('');
+        const qrCode = `${order.number}-${suffix}`;
 
         ticketsToInsert.push({
           order_id: order.id,

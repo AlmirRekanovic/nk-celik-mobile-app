@@ -14,7 +14,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export async function registerForPushNotificationsAsync(memberId: string): Promise<string | null> {
+// Identity comes from the member JWT (auth.uid() server-side); the
+// register/unregister RPCs handle a device token moving between accounts.
+
+export async function registerForPushNotificationsAsync(): Promise<string | null> {
   let token: string | null = null;
 
   if (Platform.OS === 'web') {
@@ -46,10 +49,14 @@ export async function registerForPushNotificationsAsync(memberId: string): Promi
     token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
 
     if (token) {
-      await savePushToken(memberId, token);
+      const { error } = await supabase.rpc('register_push_token', {
+        p_token: token,
+        p_platform: Platform.OS,
+      });
+      if (error) throw error;
     }
   } catch (error) {
-    console.error('Error getting push token:', error);
+    console.error('Error registering push token:', error);
     return null;
   }
 
@@ -65,54 +72,9 @@ export async function registerForPushNotificationsAsync(memberId: string): Promi
   return token;
 }
 
-async function savePushToken(memberId: string, token: string): Promise<void> {
-  try {
-    const platform = Platform.OS as 'ios' | 'android' | 'web';
-
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
-    const { data: existing } = await supabase
-      .from('push_tokens')
-      .select('id, enabled')
-      .eq('token', token)
-      .maybeSingle();
-
-    if (existing) {
-      await supabase
-        .from('push_tokens')
-        .update({
-          member_id: memberId,
-          platform,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id);
-    } else {
-      await supabase
-        .from('push_tokens')
-        .insert({
-          member_id: memberId,
-          token,
-          platform,
-          enabled: true,
-          news_enabled: true,
-          polls_enabled: true,
-        });
-    }
-  } catch (error) {
-    console.error('Error saving push token:', error);
-    throw error;
-  }
-}
-
-export async function unregisterPushToken(memberId: string, token: string): Promise<void> {
-  try {
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
-    await supabase
-      .from('push_tokens')
-      .delete()
-      .eq('token', token);
-  } catch (error) {
+export async function unregisterPushToken(token: string): Promise<void> {
+  const { error } = await supabase.rpc('unregister_push_token', { p_token: token });
+  if (error) {
     console.error('Error removing push token:', error);
     throw error;
   }
@@ -122,14 +84,11 @@ export async function updateNotificationPreference(
   memberId: string,
   enabled: boolean
 ): Promise<void> {
-  try {
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
-    await supabase
-      .from('push_tokens')
-      .update({ enabled })
-      .eq('member_id', memberId);
-  } catch (error) {
+  const { error } = await supabase
+    .from('push_tokens')
+    .update({ enabled })
+    .eq('member_id', memberId);
+  if (error) {
     console.error('Error updating notification preference:', error);
     throw error;
   }
@@ -137,8 +96,6 @@ export async function updateNotificationPreference(
 
 export async function getNotificationPreference(memberId: string): Promise<boolean> {
   try {
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
     const { data } = await supabase
       .from('push_tokens')
       .select('enabled')
@@ -168,8 +125,6 @@ export async function getAllNotificationPreferences(
   };
 
   try {
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
     const { data } = await supabase
       .from('push_tokens')
       .select('enabled, news_enabled, polls_enabled')
@@ -193,14 +148,11 @@ export async function updateNewsNotificationPreference(
   memberId: string,
   enabled: boolean
 ): Promise<void> {
-  try {
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
-    await supabase
-      .from('push_tokens')
-      .update({ news_enabled: enabled })
-      .eq('member_id', memberId);
-  } catch (error) {
+  const { error } = await supabase
+    .from('push_tokens')
+    .update({ news_enabled: enabled })
+    .eq('member_id', memberId);
+  if (error) {
     console.error('Error updating news notification preference:', error);
     throw error;
   }
@@ -210,14 +162,11 @@ export async function updatePollsNotificationPreference(
   memberId: string,
   enabled: boolean
 ): Promise<void> {
-  try {
-    await supabase.rpc('set_member_context', { member_id: memberId });
-
-    await supabase
-      .from('push_tokens')
-      .update({ polls_enabled: enabled })
-      .eq('member_id', memberId);
-  } catch (error) {
+  const { error } = await supabase
+    .from('push_tokens')
+    .update({ polls_enabled: enabled })
+    .eq('member_id', memberId);
+  if (error) {
     console.error('Error updating polls notification preference:', error);
     throw error;
   }
