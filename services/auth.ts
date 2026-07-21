@@ -14,12 +14,14 @@ const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
 export { getStoredMember };
 
-/**
- * Verifies email + member number against the member-login edge function.
- * Credentials are never checked client-side; the members table is not
- * readable with the anon key at all.
- */
-export async function loginWithEmailAndPassword(email: string, memberId: string): Promise<Member | null> {
+type LoginBody =
+  | { email: string; member_id: string }
+  | { first_name: string; last_name: string; member_id: string };
+
+// Credentials are never checked client-side; the members table is not
+// readable with the anon key at all. This just relays to the edge function
+// and stores the returned session.
+async function requestLogin(body: LoginBody): Promise<Member | null> {
   try {
     const response = await fetch(`${supabaseUrl}/functions/v1/member-login`, {
       method: 'POST',
@@ -28,7 +30,7 @@ export async function loginWithEmailAndPassword(email: string, memberId: string)
         apikey: supabaseAnonKey,
         Authorization: `Bearer ${supabaseAnonKey}`,
       },
-      body: JSON.stringify({ email, member_id: memberId }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -50,18 +52,37 @@ export async function loginWithEmailAndPassword(email: string, memberId: string)
   }
 }
 
+/** Verifies email + member number. */
+export async function loginWithEmailAndPassword(email: string, memberId: string): Promise<Member | null> {
+  return requestLogin({ email, member_id: memberId });
+}
+
+/** Fallback for members with no email on file: first + last name + member number. */
+export async function loginWithNameAndMemberId(
+  firstName: string,
+  lastName: string,
+  memberId: string
+): Promise<Member | null> {
+  return requestLogin({ first_name: firstName, last_name: lastName, member_id: memberId });
+}
+
 /**
- * Silently re-issues the JWT using the stored credentials (email + member
- * number) when it is expired or close to expiring. Members who stay logged
- * in never see a login screen again; if the device is offline the old token
- * simply keeps being used until the next successful refresh.
+ * Silently re-issues the JWT using the stored credentials when it is expired
+ * or close to expiring, so members who stay logged in never see a login
+ * screen again. Uses email if the member has one, otherwise falls back to
+ * name-based login. If offline, the old token keeps being used until the
+ * next successful refresh.
  */
 export async function refreshSessionIfNeeded(): Promise<void> {
   try {
     if (!(await tokenNeedsRefresh())) return;
     const member = await getStoredMember();
-    if (member?.email && member?.member_id) {
+    if (!member?.member_id) return;
+
+    if (member.email) {
       await loginWithEmailAndPassword(member.email, member.member_id);
+    } else if (member.first_name && member.last_name) {
+      await loginWithNameAndMemberId(member.first_name, member.last_name, member.member_id);
     }
   } catch (error) {
     console.error('Session refresh error:', error);

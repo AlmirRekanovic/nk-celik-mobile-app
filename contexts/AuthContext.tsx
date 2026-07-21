@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Member, AuthState } from '@/types/auth';
-import { getStoredMember, isGuestMode, loginWithEmailAndPassword, refreshSessionIfNeeded, setGuestMode, logout } from '@/services/auth';
+import { getStoredMember, isGuestMode, loginWithEmailAndPassword, loginWithNameAndMemberId, refreshSessionIfNeeded, setGuestMode, logout } from '@/services/auth';
 import { registerForPushNotificationsAsync, setupNotificationListeners } from '@/services/notifications';
 import NotificationPermissionModal from '@/components/NotificationPermissionModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,6 +11,7 @@ const NOTIFICATION_PROMPT_KEY = 'NK_CELIK_NOTIFICATION_PROMPTED';
 
 interface AuthContextType extends AuthState {
   loginWithPassword: (email: string, password: string) => Promise<boolean>;
+  loginWithName: (firstName: string, lastName: string, memberId: string) => Promise<boolean>;
   continueAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
@@ -112,6 +113,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
+  const loginWithName = async (firstName: string, lastName: string, memberId: string): Promise<boolean> => {
+    const loggedInMember = await loginWithNameAndMemberId(firstName, lastName, memberId);
+
+    if (loggedInMember) {
+      setMember(loggedInMember);
+      setIsGuest(false);
+      return true;
+    }
+
+    return false;
+  };
+
   const continueAsGuest = async () => {
     await setGuestMode();
     setIsGuest(true);
@@ -131,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isGuest,
         isAuthenticated: !!member || isGuest,
         loginWithPassword,
+        loginWithName,
         continueAsGuest,
         signOut,
         loading,

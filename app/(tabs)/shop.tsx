@@ -15,6 +15,24 @@ import { ShoppingCart, ArrowLeft } from '@/components/Icons';
 
 const SHOP_URL = 'https://nkcelik.ba/shop/';
 
+// A WooCommerce page pulls in many subresources (images, fonts, analytics,
+// the cart fragments AJAX call). Any one of them can return a 4xx/5xx without
+// the page itself being broken. We only surface an error when the MAIN
+// document fails, otherwise a single 404 favicon would blank the whole shop.
+function isMainFrameUrl(url?: string): boolean {
+  if (!url) return true;
+  try {
+    return new URL(url).hostname === new URL(SHOP_URL).hostname;
+  } catch {
+    return false;
+  }
+}
+
+// Some hosting WAFs serve a block page (or nothing) to the stock Android
+// WebView user-agent. A normal Chrome UA avoids that.
+const USER_AGENT =
+  'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+
 export default function ShopScreen() {
   const { member, isGuest } = useAuth();
   const { isDarkMode } = useTheme();
@@ -85,9 +103,13 @@ export default function ShopScreen() {
               ref={webviewRef}
               source={{ uri: SHOP_URL }}
               style={styles.webview}
+              originWhitelist={['*']}
+              userAgent={USER_AGENT}
               onLoadStart={() => setLoading(true)}
               onLoadEnd={() => setLoading(false)}
               onError={({ nativeEvent }) => {
+                // Ignore subresource load failures; only the main document matters.
+                if (!isMainFrameUrl(nativeEvent.url)) return;
                 setLoading(false);
                 setError(
                   nativeEvent.description ||
@@ -95,6 +117,8 @@ export default function ShopScreen() {
                 );
               }}
               onHttpError={({ nativeEvent }) => {
+                // Only the main page's status should ever show the error screen.
+                if (!isMainFrameUrl(nativeEvent.url)) return;
                 if (nativeEvent.statusCode >= 400) {
                   setLoading(false);
                   setError(`Server je vratio grešku (${nativeEvent.statusCode}).`);

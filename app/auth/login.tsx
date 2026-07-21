@@ -14,35 +14,64 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Mail, Lock } from '@/components/Icons';
+import { Mail, Lock, User } from '@/components/Icons';
+
+type LoginMode = 'email' | 'name';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { loginWithPassword, continueAsGuest } = useAuth();
+  const { loginWithPassword, loginWithName, continueAsGuest } = useAuth();
   const { isDarkMode } = useTheme();
+  const [mode, setMode] = useState<LoginMode>('email');
   const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setError('Molimo unesite email i lozinku');
+    if (!password.trim()) {
+      setError('Molimo unesite članski broj');
       return;
     }
 
     setLoading(true);
     setError('');
 
-    const success = await loginWithPassword(email.trim().toLowerCase(), password.trim());
+    let success: boolean;
+    if (mode === 'email') {
+      if (!email.trim()) {
+        setError('Molimo unesite email i članski broj');
+        setLoading(false);
+        return;
+      }
+      success = await loginWithPassword(email.trim().toLowerCase(), password.trim());
+    } else {
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('Molimo unesite ime, prezime i članski broj');
+        setLoading(false);
+        return;
+      }
+      success = await loginWithName(firstName.trim(), lastName.trim(), password.trim());
+    }
 
     if (success) {
       router.replace('/(tabs)');
     } else {
-      setError('Pogrešan email ili lozinka.');
+      setError(
+        mode === 'email'
+          ? 'Pogrešan email ili članski broj.'
+          : 'Pogrešno ime, prezime ili članski broj.'
+      );
     }
 
     setLoading(false);
+  };
+
+  const toggleMode = () => {
+    setError('');
+    setMode(prev => (prev === 'email' ? 'name' : 'email'));
   };
 
   const handleGuestMode = async () => {
@@ -77,30 +106,62 @@ export default function LoginScreen() {
         <View style={[styles.formContainer, { backgroundColor: formBg }]}>
           <Text style={[styles.title, { color: textColor }]}>Prijava člana</Text>
           <Text style={[styles.subtitle, { color: subtextColor }]}>
-            Prijavite se sa Vašim email-om i članskim brojem
+            {mode === 'email'
+              ? 'Prijavite se sa Vašim email-om i članskim brojem'
+              : 'Prijavite se sa Vašim imenom, prezimenom i članskim brojem'}
           </Text>
 
           <View style={styles.inputGroup}>
-            <View style={[styles.inputWrapper, { backgroundColor: inputBg, borderColor: inputBorder }]}>
-              <Mail size={20} color={subtextColor} style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { color: inputText }]}
-                placeholder="Email adresa"
-                placeholderTextColor="#9CA3AF"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!loading}
-              />
-            </View>
+            {mode === 'email' ? (
+              <View style={[styles.inputWrapper, { backgroundColor: inputBg, borderColor: inputBorder }]}>
+                <Mail size={20} color={subtextColor} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: inputText }]}
+                  placeholder="Email adresa"
+                  placeholderTextColor="#9CA3AF"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!loading}
+                />
+              </View>
+            ) : (
+              <>
+                <View style={[styles.inputWrapper, { backgroundColor: inputBg, borderColor: inputBorder }]}>
+                  <User size={20} color={subtextColor} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { color: inputText }]}
+                    placeholder="Ime"
+                    placeholderTextColor="#9CA3AF"
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    autoCorrect={false}
+                    editable={!loading}
+                  />
+                </View>
+
+                <View style={[styles.inputWrapper, { backgroundColor: inputBg, borderColor: inputBorder }]}>
+                  <User size={20} color={subtextColor} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { color: inputText }]}
+                    placeholder="Prezime"
+                    placeholderTextColor="#9CA3AF"
+                    value={lastName}
+                    onChangeText={setLastName}
+                    autoCorrect={false}
+                    editable={!loading}
+                  />
+                </View>
+              </>
+            )}
 
             <View style={[styles.inputWrapper, { backgroundColor: inputBg, borderColor: inputBorder }]}>
               <Lock size={20} color={subtextColor} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: inputText }]}
-                placeholder="Lozinka (članski broj)"
+                placeholder="Članski broj"
                 placeholderTextColor="#9CA3AF"
                 value={password}
                 onChangeText={setPassword}
@@ -108,6 +169,14 @@ export default function LoginScreen() {
                 editable={!loading}
               />
             </View>
+
+            <TouchableOpacity onPress={toggleMode} disabled={loading} style={styles.modeToggle}>
+              <Text style={styles.modeToggleText}>
+                {mode === 'email'
+                  ? 'Nemate email? Prijavite se imenom i prezimenom'
+                  : 'Prijava putem email adrese'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -210,6 +279,16 @@ const styles = StyleSheet.create({
     height: 52,
     fontSize: 16,
     color: '#1F2937',
+  },
+  modeToggle: {
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  modeToggleText: {
+    color: '#D4AF37',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   errorText: {
     color: '#DC2626',

@@ -69,7 +69,7 @@ export default function CreatePollScreen() {
     setLoading(true);
     setError('');
 
-    const poll = await createPoll(
+    const { poll, error: createError } = await createPoll(
       title.trim(),
       description.trim(),
       pollType,
@@ -82,7 +82,7 @@ export default function CreatePollScreen() {
     if (poll) {
       router.back();
     } else {
-      setError('Greška pri kreiranju ankete');
+      setError(createError || 'Greška pri kreiranju ankete');
     }
   };
 

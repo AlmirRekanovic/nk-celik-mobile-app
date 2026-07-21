@@ -170,6 +170,11 @@ export async function castVote(pollId: string, memberId: string, optionValue: st
   }
 }
 
+export interface CreatePollResult {
+  poll: Poll | null;
+  error?: string;
+}
+
 export async function createPoll(
   title: string,
   description: string,
@@ -177,7 +182,7 @@ export async function createPoll(
   options: string[],
   createdBy: string,
   endsAt?: string
-): Promise<Poll | null> {
+): Promise<CreatePollResult> {
   try {
     const { data, error } = await supabase
       .from('polls')
@@ -195,7 +200,13 @@ export async function createPoll(
 
     if (error) {
       console.error('Error creating poll:', error);
-      return null;
+      // 42501 = RLS violation → the caller isn't recognised as an admin,
+      // usually a stale session from before the auth migration.
+      const message =
+        error.code === '42501'
+          ? 'Nemate administratorska prava (pokušajte se ponovo prijaviti).'
+          : error.message || 'Greška pri kreiranju ankete';
+      return { poll: null, error: message };
     }
 
     if (data) {
@@ -204,10 +215,10 @@ export async function createPoll(
       );
     }
 
-    return data;
-  } catch (error) {
+    return { poll: data };
+  } catch (error: any) {
     console.error('Error creating poll:', error);
-    return null;
+    return { poll: null, error: error?.message || 'Greška pri kreiranju ankete' };
   }
 }
 

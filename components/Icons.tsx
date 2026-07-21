@@ -15,6 +15,13 @@ export const ArrowLeft = ({ size = 24, color = '#000', strokeWidth = 2, style }:
   </Svg>
 );
 
+export const User = ({ size = 24, color = '#000', strokeWidth = 2, style }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
+    <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    <SvgCircle cx={12} cy={7} r={4} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
 export const Mail = ({ size = 24, color = '#000', strokeWidth = 2, style }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style}>
     <Rect x={2} y={4} width={20} height={16} rx={2} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />

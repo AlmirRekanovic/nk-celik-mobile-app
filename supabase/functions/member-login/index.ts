@@ -1,10 +1,11 @@
 // member-login — the only place member credentials are ever checked.
 //
-// The app POSTs { email, member_id }; we verify the pair against the members
-// table with the service role (the table is not readable by clients at all)
-// and return a signed HS256 JWT carrying sub = member uuid, role =
-// 'authenticated' and an email claim. PostgREST/RLS then treat the caller as
-// a normally authenticated user, so auth.uid() works everywhere.
+// The app POSTs either { email, member_id } or, for older members who have
+// no email on file, { first_name, last_name, member_id }. We verify the pair
+// against the members table with the service role (the table is not readable
+// by clients at all) and return a signed HS256 JWT carrying sub = member
+// uuid, role = 'authenticated' and an email claim. PostgREST/RLS then treat
+// the caller as a normally authenticated user, so auth.uid() works everywhere.
 //
 // Deploy with --no-verify-jwt and set the JWT_SECRET secret (the project's
 // legacy JWT secret from Dashboard → Settings → API) — see SECURITY_MIGRATION.md.
@@ -65,32 +66,43 @@ Deno.serve(async (req: Request) => {
       return json(429, { error: "Too many attempts, try again later" });
     }
 
-    const { email, member_id } = await req.json().catch(() => ({}));
-    if (typeof email !== "string" || typeof member_id !== "string" || !email.trim() || !member_id.trim()) {
-      return json(400, { error: "email and member_id are required" });
-    }
+    const body = await req.json().catch(() => ({}));
+    const memberId = typeof body.member_id === "string" ? body.member_id.trim() : "";
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const firstName = typeof body.first_name === "string" ? body.first_name.trim() : "";
+    const lastName = typeof body.last_name === "string" ? body.last_name.trim() : "";
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const normalizedMemberId = member_id.trim();
+    if (!memberId) {
+      return json(400, { error: "member_id is required" });
+    }
+    // Need either an email or a full name to identify the member.
+    const useNameLogin = !email && firstName && lastName;
+    if (!email && !useNameLogin) {
+      return json(400, { error: "email, or first_name + last_name, is required" });
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: member, error } = await supabase
+    let query = supabase
       .from("members")
       .select("id, member_id, first_name, last_name, email, is_admin, chat_nickname, created_at, last_login_at")
-      .ilike("email", normalizedEmail)
-      .eq("member_id", normalizedMemberId)
-      .maybeSingle();
+      .eq("member_id", memberId);
+
+    query = useNameLogin
+      ? query.ilike("first_name", firstName).ilike("last_name", lastName)
+      : query.ilike("email", email);
+
+    const { data: member, error } = await query.maybeSingle();
 
     if (error) {
       console.error("[member-login] lookup failed:", error);
       return json(500, { error: "Login failed" });
     }
     if (!member) {
-      console.warn(`[member-login] invalid credentials for ${normalizedEmail} from ${ip}`);
+      console.warn(`[member-login] invalid credentials (${useNameLogin ? "name" : "email"}) from ${ip}`);
       return json(401, { error: "Invalid credentials" });
     }
 
@@ -107,7 +119,7 @@ Deno.serve(async (req: Request) => {
         role: "authenticated",
         aud: "authenticated",
         iss: "member-login",
-        email: member.email ?? normalizedEmail,
+        email: member.email ?? email ?? "",
         is_admin: member.is_admin === true,
         iat: nowSeconds,
         exp: expSeconds,
