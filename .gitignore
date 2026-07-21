@@ -38,3 +38,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 deploy-security.ps1
+
+# supabase local link state
+supabase/.temp/
