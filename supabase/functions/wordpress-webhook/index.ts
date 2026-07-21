@@ -4,16 +4,57 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-interface WordPressPost {
+interface NormalizedPost {
   id: number;
-  title: {
-    rendered: string;
-  };
-  excerpt: {
-    rendered: string;
-  };
+  title: string;
+  excerpt: string;
   status: string;
   type: string;
+}
+
+// WordPress can send us two very different payload shapes:
+//   1. WP REST API shape (theme snippet path): { id, title:{rendered}, excerpt:{rendered}, status, type }
+//   2. WP Webhooks plugin shape: { post_id, post: { ID, post_title, post_excerpt, post_status, post_type } }
+// Normalize both into a single internal shape so the rest of the function
+// doesn't have to care which sender fired the request.
+function normalizePayload(raw: any): NormalizedPost | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  // Plugin shape: { post: { ID, post_title, ... } } or nested under `data`
+  const pluginPost = raw.post ?? raw.data?.post;
+  if (pluginPost && (pluginPost.ID !== undefined || pluginPost.post_title !== undefined)) {
+    return {
+      id: Number(pluginPost.ID ?? raw.post_id ?? 0),
+      title: String(pluginPost.post_title ?? ""),
+      excerpt: String(pluginPost.post_excerpt ?? pluginPost.post_content ?? ""),
+      status: String(pluginPost.post_status ?? "publish"),
+      type: String(pluginPost.post_type ?? "post"),
+    };
+  }
+
+  // Some plugin configs flatten it: { post_id, post_title, post_status, ... } at top level
+  if (raw.post_id !== undefined && raw.post_title !== undefined) {
+    return {
+      id: Number(raw.post_id),
+      title: String(raw.post_title ?? ""),
+      excerpt: String(raw.post_excerpt ?? raw.post_content ?? ""),
+      status: String(raw.post_status ?? "publish"),
+      type: String(raw.post_type ?? "post"),
+    };
+  }
+
+  // REST API shape: { id, title:{rendered}, ... }
+  if (raw.id !== undefined && raw.title) {
+    return {
+      id: Number(raw.id),
+      title: String(raw.title?.rendered ?? raw.title ?? ""),
+      excerpt: String(raw.excerpt?.rendered ?? raw.excerpt ?? ""),
+      status: String(raw.status ?? "publish"),
+      type: String(raw.type ?? "post"),
+    };
+  }
+
+  return null;
 }
 
 Deno.serve(async (req: Request) => {
@@ -50,14 +91,29 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const post: WordPressPost = await req.json();
+    const rawPayload = await req.json();
+    const post = normalizePayload(rawPayload);
 
-    console.log("Received WordPress post:", post.id);
+    if (!post) {
+      console.error("Unrecognized WordPress payload shape:", JSON.stringify(rawPayload).slice(0, 500));
+      return new Response(
+        JSON.stringify({
+          error: "Unrecognized payload shape",
+          hint: "Send WP REST API format ({id, title:{rendered}, ...}) or WP Webhooks plugin format ({post_id, post:{ID, post_title, ...}}).",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log("Received WordPress post:", post.id, post.title);
 
     if (post.status !== "publish" || post.type !== "post") {
-      console.log("Post not published or not a post type, skipping");
+      console.log(`Post not published or not a post type, skipping (status=${post.status}, type=${post.type})`);
       return new Response(
-        JSON.stringify({ message: "Post not published" }),
+        JSON.stringify({ message: "Post not published", status: post.status, type: post.type }),
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -72,8 +128,8 @@ Deno.serve(async (req: Request) => {
       return html.replace(/<[^>]*>/g, "").trim();
     };
 
-    const title = stripHtml(post.title.rendered);
-    const excerpt = stripHtml(post.excerpt.rendered);
+    const title = stripHtml(post.title);
+    const excerpt = stripHtml(post.excerpt);
 
     const notificationBody = excerpt.length > 100
       ? excerpt.substring(0, 100) + "..."
