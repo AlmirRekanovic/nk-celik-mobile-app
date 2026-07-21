@@ -17,7 +17,13 @@ import { getSettings, setSettings, getLastSyncTime } from '@/services/storage';
 import { DEFAULT_PAGE_SIZE } from '@/constants/config';
 import { LogOut, UserCog, LogIn } from '@/components/Icons';
 import AdBanner from '@/components/AdBanner';
-import { getNotificationPreference, updateNotificationPreference } from '@/services/notifications';
+import {
+  getAllNotificationPreferences,
+  updateNotificationPreference,
+  updateNewsNotificationPreference,
+  updatePollsNotificationPreference,
+  NotificationPreferences,
+} from '@/services/notifications';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -28,12 +34,16 @@ export default function SettingsScreen() {
     postsPerPage: DEFAULT_PAGE_SIZE,
   });
   const [lastSync, setLastSync] = useState<string | null>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [prefs, setPrefs] = useState<NotificationPreferences>({
+    enabled: false,
+    news_enabled: true,
+    polls_enabled: true,
+  });
 
   useEffect(() => {
     loadSettings();
     loadLastSync();
-    loadNotificationPreference();
+    loadNotificationPreferences();
   }, [member?.id]);
 
   const loadSettings = async () => {
@@ -46,17 +56,43 @@ export default function SettingsScreen() {
     setLastSync(syncTime);
   };
 
-  const loadNotificationPreference = async () => {
+  const loadNotificationPreferences = async () => {
     if (member?.id) {
-      const enabled = await getNotificationPreference(member.id);
-      setNotificationsEnabled(enabled);
+      const loaded = await getAllNotificationPreferences(member.id);
+      setPrefs(loaded);
     }
   };
 
-  const handleToggleNotifications = async (value: boolean) => {
-    if (member?.id) {
-      setNotificationsEnabled(value);
+  const handleToggleMaster = async (value: boolean) => {
+    if (!member?.id) return;
+    const prev = prefs;
+    setPrefs({ ...prefs, enabled: value });
+    try {
       await updateNotificationPreference(member.id, value);
+    } catch {
+      setPrefs(prev);
+    }
+  };
+
+  const handleToggleNews = async (value: boolean) => {
+    if (!member?.id) return;
+    const prev = prefs;
+    setPrefs({ ...prefs, news_enabled: value });
+    try {
+      await updateNewsNotificationPreference(member.id, value);
+    } catch {
+      setPrefs(prev);
+    }
+  };
+
+  const handleTogglePolls = async (value: boolean) => {
+    if (!member?.id) return;
+    const prev = prefs;
+    setPrefs({ ...prefs, polls_enabled: value });
+    try {
+      await updatePollsNotificationPreference(member.id, value);
+    } catch {
+      setPrefs(prev);
     }
   };
 
@@ -193,14 +229,46 @@ export default function SettingsScreen() {
               <View style={styles.settingInfo}>
                 <Text style={[styles.settingLabel, { color: textColor }]}>Push obavještenja</Text>
                 <Text style={[styles.settingDescription, { color: subtextColor }]}>
-                  Primaj obavještenja o novim vijestima i anketama
+                  Glavni prekidač za sva obavještenja
                 </Text>
               </View>
               <Switch
-                value={notificationsEnabled}
-                onValueChange={handleToggleNotifications}
+                value={prefs.enabled}
+                onValueChange={handleToggleMaster}
                 trackColor={{ false: '#D1D5DB', true: '#FFE8A1' }}
-                thumbColor={notificationsEnabled ? '#D4AF37' : '#F3F4F6'}
+                thumbColor={prefs.enabled ? '#D4AF37' : '#F3F4F6'}
+              />
+            </View>
+
+            <View style={[styles.settingRow, { opacity: prefs.enabled ? 1 : 0.4 }]}>
+              <View style={styles.settingInfo}>
+                <Text style={[styles.settingLabel, { color: textColor }]}>Vijesti</Text>
+                <Text style={[styles.settingDescription, { color: subtextColor }]}>
+                  Obavještenja o novim vijestima na sajtu
+                </Text>
+              </View>
+              <Switch
+                value={prefs.news_enabled}
+                onValueChange={handleToggleNews}
+                disabled={!prefs.enabled}
+                trackColor={{ false: '#D1D5DB', true: '#FFE8A1' }}
+                thumbColor={prefs.news_enabled && prefs.enabled ? '#D4AF37' : '#F3F4F6'}
+              />
+            </View>
+
+            <View style={[styles.settingRow, { opacity: prefs.enabled ? 1 : 0.4 }]}>
+              <View style={styles.settingInfo}>
+                <Text style={[styles.settingLabel, { color: textColor }]}>Ankete</Text>
+                <Text style={[styles.settingDescription, { color: subtextColor }]}>
+                  Obavještenja o novim anketama
+                </Text>
+              </View>
+              <Switch
+                value={prefs.polls_enabled}
+                onValueChange={handleTogglePolls}
+                disabled={!prefs.enabled}
+                trackColor={{ false: '#D1D5DB', true: '#FFE8A1' }}
+                thumbColor={prefs.polls_enabled && prefs.enabled ? '#D4AF37' : '#F3F4F6'}
               />
             </View>
           </View>

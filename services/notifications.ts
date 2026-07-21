@@ -94,6 +94,8 @@ async function savePushToken(memberId: string, token: string): Promise<void> {
           token,
           platform,
           enabled: true,
+          news_enabled: true,
+          polls_enabled: true,
         });
     }
   } catch (error) {
@@ -147,6 +149,77 @@ export async function getNotificationPreference(memberId: string): Promise<boole
   } catch (error) {
     console.error('Error getting notification preference:', error);
     return false;
+  }
+}
+
+export interface NotificationPreferences {
+  enabled: boolean;
+  news_enabled: boolean;
+  polls_enabled: boolean;
+}
+
+export async function getAllNotificationPreferences(
+  memberId: string
+): Promise<NotificationPreferences> {
+  const fallback: NotificationPreferences = {
+    enabled: false,
+    news_enabled: true,
+    polls_enabled: true,
+  };
+
+  try {
+    await supabase.rpc('set_member_context', { member_id: memberId });
+
+    const { data } = await supabase
+      .from('push_tokens')
+      .select('enabled, news_enabled, polls_enabled')
+      .eq('member_id', memberId)
+      .maybeSingle();
+
+    if (!data) return fallback;
+
+    return {
+      enabled: data.enabled ?? false,
+      news_enabled: data.news_enabled ?? true,
+      polls_enabled: data.polls_enabled ?? true,
+    };
+  } catch (error) {
+    console.error('Error getting notification preferences:', error);
+    return fallback;
+  }
+}
+
+export async function updateNewsNotificationPreference(
+  memberId: string,
+  enabled: boolean
+): Promise<void> {
+  try {
+    await supabase.rpc('set_member_context', { member_id: memberId });
+
+    await supabase
+      .from('push_tokens')
+      .update({ news_enabled: enabled })
+      .eq('member_id', memberId);
+  } catch (error) {
+    console.error('Error updating news notification preference:', error);
+    throw error;
+  }
+}
+
+export async function updatePollsNotificationPreference(
+  memberId: string,
+  enabled: boolean
+): Promise<void> {
+  try {
+    await supabase.rpc('set_member_context', { member_id: memberId });
+
+    await supabase
+      .from('push_tokens')
+      .update({ polls_enabled: enabled })
+      .eq('member_id', memberId);
+  } catch (error) {
+    console.error('Error updating polls notification preference:', error);
+    throw error;
   }
 }
 

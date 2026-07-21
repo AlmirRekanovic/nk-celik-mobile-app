@@ -83,12 +83,19 @@ Deno.serve(async (req: Request) => {
       },
     }));
 
-    const chunks = [];
-    for (let i = 0; i < messages.length; i += 100) {
-      chunks.push(messages.slice(i, i + 100));
+    const CHUNK_SIZE = 100;
+    const chunks: Array<Array<{ to: string }>> = [];
+    for (let i = 0; i < messages.length; i += CHUNK_SIZE) {
+      chunks.push(messages.slice(i, i + CHUNK_SIZE) as Array<{ to: string }>);
     }
 
     const results = [];
+    const deadTokens: string[] = [];
+    const DEAD_TOKEN_ERRORS = new Set([
+      "DeviceNotRegistered",
+      "InvalidCredentials",
+    ]);
+
     for (const chunk of chunks) {
       const response = await fetch("https://exp.host/--/api/v2/push/send", {
         method: "POST",
@@ -106,12 +113,42 @@ Deno.serve(async (req: Request) => {
 
       const result = await response.json();
       results.push(result);
+
+      // Expo Push API returns { data: [ticket, ticket, ...] } — order matches
+      // the chunk we sent. Tickets with status="error" and a "DeviceNotRegistered"
+      // or "InvalidCredentials" detail mean the token is permanently dead:
+      // uninstalled app, revoked permission, expired Expo project. Delete them so
+      // future notifications don't waste an API slot.
+      const tickets = Array.isArray(result?.data) ? result.data : [];
+      tickets.forEach((ticket: any, idx: number) => {
+        if (
+          ticket?.status === "error" &&
+          DEAD_TOKEN_ERRORS.has(ticket?.details?.error)
+        ) {
+          const token = chunk[idx]?.to;
+          if (token) deadTokens.push(token);
+        }
+      });
+    }
+
+    if (deadTokens.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("push_tokens")
+        .delete()
+        .in("token", deadTokens);
+
+      if (deleteError) {
+        console.error("Failed to prune dead tokens:", deleteError);
+      } else {
+        console.log(`Pruned ${deadTokens.length} dead push tokens`);
+      }
     }
 
     return new Response(
       JSON.stringify({
         message: "Push notifications sent successfully",
         sentCount: messages.length,
+        prunedCount: deadTokens.length,
         results,
       }),
       {
