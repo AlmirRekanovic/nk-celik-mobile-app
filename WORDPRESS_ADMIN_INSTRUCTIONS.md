@@ -31,8 +31,7 @@ You will need:
 
 4. Configure the webhook with these settings:
    - **Trigger**: Select "Post published"
-   - **Webhook URL**: Paste the URL provided by your app developer
-     - Format: `https://[YOUR-SUPABASE-PROJECT-ID].supabase.co/functions/v1/wordpress-webhook`
+   - **Webhook URL**: `https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/wordpress-webhook`
    - **Name**: "Push Notifications on New Post"
    - **Status**: Make sure it's enabled (toggle to ON)
 
