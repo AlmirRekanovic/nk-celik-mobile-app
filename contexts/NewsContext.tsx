@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import { NewsItem } from '@/types/news';
 import { fetchPosts } from '@/services/wordpress';
 import { getCachedPosts, setCachedPosts, mergePosts, setLastSyncTime } from '@/services/storage';
@@ -10,6 +10,7 @@ interface NewsContextType {
   error: string | null;
   initialized: boolean;
   refreshPosts: () => Promise<void>;
+  refreshIfStale: () => Promise<void>;
   loadMorePosts: () => Promise<void>;
   hasMore: boolean;
   currentPage: number;
@@ -19,6 +20,9 @@ const NewsContext = createContext<NewsContextType | undefined>(undefined);
 
 const INITIAL_LOAD_COUNT = 20;
 const PAGE_SIZE = 20;
+// Don't re-hit WordPress more than once per this window when the news screen
+// gains focus / ticks — avoids reloading on every visit.
+const REFRESH_STALE_MS = 3 * 60 * 1000;
 
 export function NewsProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<NewsItem[]>([]);
@@ -27,6 +31,14 @@ export function NewsProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  // Mirrors `posts` so refreshIfStale can merge without a stale closure.
+  const postsRef = useRef<NewsItem[]>([]);
+  const lastFetchRef = useRef<number>(0);
+
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
 
   useEffect(() => {
     initializeNews();
@@ -66,6 +78,7 @@ export function NewsProvider({ children }: { children: ReactNode }) {
       if (freshPosts.length > 0) {
         const merged = cached.length > 0 ? await mergePosts(cached, freshPosts) : freshPosts;
         setPosts(merged);
+        lastFetchRef.current = Date.now();
         await setCachedPosts(merged);
         await setLastSyncTime(new Date().toISOString());
 
@@ -130,6 +143,7 @@ export function NewsProvider({ children }: { children: ReactNode }) {
 
       if (freshPosts.length > 0) {
         setPosts(freshPosts);
+        lastFetchRef.current = Date.now();
         await setCachedPosts(freshPosts);
         await setLastSyncTime(new Date().toISOString());
       }
@@ -138,6 +152,25 @@ export function NewsProvider({ children }: { children: ReactNode }) {
       setError('Failed to refresh news');
     }
   };
+
+  // Silent, throttled refresh for use on screen focus / interval. Only hits the
+  // network if the last fetch is older than REFRESH_STALE_MS, and MERGES the
+  // latest page into the existing list (new posts appear at the top) instead of
+  // reloading everything — so frequent visits don't re-download the whole feed.
+  const refreshIfStale = useCallback(async () => {
+    if (Date.now() - lastFetchRef.current < REFRESH_STALE_MS) return;
+    lastFetchRef.current = Date.now();
+    try {
+      const fresh = await fetchPosts(1, PAGE_SIZE);
+      if (fresh.length === 0) return;
+      const merged = await mergePosts(postsRef.current, fresh);
+      setPosts(merged);
+      await setCachedPosts(merged);
+      await setLastSyncTime(new Date().toISOString());
+    } catch (err) {
+      console.log('[NewsContext] refreshIfStale skipped:', err);
+    }
+  }, []);
 
   const loadMorePosts = async () => {
     if (!hasMore || loading) return;
@@ -170,6 +203,7 @@ export function NewsProvider({ children }: { children: ReactNode }) {
         error,
         initialized,
         refreshPosts,
+        refreshIfStale,
         loadMorePosts,
         hasMore,
         currentPage,

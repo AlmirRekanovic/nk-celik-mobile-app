@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { NewsItem } from '@/types/news';
 import { useNews } from '@/contexts/NewsContext';
@@ -64,8 +64,19 @@ const NewsItemCard = memo(({ item, onPress, isDarkMode }: { item: NewsItem; onPr
 
 export default function NewsListScreen() {
   const router = useRouter();
-  const { posts, loading, error, refreshPosts, loadMorePosts, hasMore } = useNews();
+  const { posts, loading, error, refreshPosts, refreshIfStale, loadMorePosts, hasMore } = useNews();
   const { isDarkMode } = useTheme();
+
+  // While the news tab is focused, quietly check for new posts on focus and
+  // every few minutes. refreshIfStale is throttled + merge-based, so this never
+  // re-downloads the whole feed or reloads on every visit.
+  useFocusEffect(
+    useCallback(() => {
+      refreshIfStale();
+      const interval = setInterval(() => refreshIfStale(), 3 * 60 * 1000);
+      return () => clearInterval(interval);
+    }, [refreshIfStale])
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
