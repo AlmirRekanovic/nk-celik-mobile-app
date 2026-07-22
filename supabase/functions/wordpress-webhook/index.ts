@@ -101,9 +101,23 @@ Deno.serve(async (req: Request) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    if (!timingSafeEqual(req.headers.get("X-Webhook-Secret") ?? "", webhookSecret)) {
+    const receivedSecret = req.headers.get("X-Webhook-Secret") ?? "";
+    if (!timingSafeEqual(receivedSecret, webhookSecret)) {
+      // Diagnostic (no secret value leaked) so the sender's delivery log shows
+      // WHY it's rejected: header missing vs. wrong length/value.
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
+        JSON.stringify({
+          error: "Unauthorized",
+          diagnostic: {
+            header_name_expected: "X-Webhook-Secret",
+            header_received: receivedSecret.length > 0,
+            received_length: receivedSecret.length,
+            expected_length: webhookSecret.length,
+            hint: receivedSecret.length === 0
+              ? "The X-Webhook-Secret header did not arrive — check the header NAME (hyphens, not underscores) and that it's set as a request header."
+              : "The header arrived but its value is wrong — check for typos, extra spaces/quotes, or a truncated value.",
+          },
+        }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
