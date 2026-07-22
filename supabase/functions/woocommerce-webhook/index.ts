@@ -170,6 +170,8 @@ Deno.serve(async (req: Request) => {
 
     // Create ticket for each line item
     const ticketsToInsert = [];
+    // Running number across ALL tickets in this order: <orderNumber>-1, -2, -3…
+    let ticketSeq = 0;
 
     for (const item of order.line_items) {
       let eventName = item.name;
@@ -207,12 +209,12 @@ Deno.serve(async (req: Request) => {
       }
 
       for (let i = 0; i < item.quantity; i++) {
-        // Random suffix so codes can't be derived from sequential order
-        // numbers; the order number prefix stays for human readability.
-        const randomBytes = new Uint8Array(6);
-        crypto.getRandomValues(randomBytes);
-        const suffix = Array.from(randomBytes, b => b.toString(16).padStart(2, '0')).join('');
-        const qrCode = `${order.number}-${suffix}`;
+        // Human-readable sequential code, e.g. "138027-1", "138027-2".
+        // The unique constraint on ticket_code also makes re-delivery of the
+        // same order idempotent (the repeated codes collide instead of
+        // creating duplicate tickets).
+        ticketSeq++;
+        const qrCode = `${order.number}-${ticketSeq}`;
 
         ticketsToInsert.push({
           order_id: order.id,
@@ -239,6 +241,16 @@ Deno.serve(async (req: Request) => {
       .select();
 
     if (insertError) {
+      // 23505 = unique_violation on ticket_code: this order was already
+      // processed (a retry / duplicate delivery). Ack with 200 so WooCommerce
+      // doesn't keep retrying or disable the webhook.
+      if (insertError.code === '23505') {
+        console.log('Order already processed (duplicate delivery):', order.number);
+        return new Response(
+          JSON.stringify({ success: true, message: 'Order already processed', duplicate: true }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       console.error('Error inserting tickets:', insertError);
       throw insertError;
     }
