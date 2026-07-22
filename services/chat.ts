@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getAccessToken } from './session';
 import { ChatMessage } from '@/types/chat';
 
 // Sender names come from the member_profiles view (safe columns only) — the
@@ -98,50 +99,63 @@ export const chatService = {
     onUpdate: (message: ChatMessage) => void,
     onDelete: (messageId: string) => void
   ) {
-    const channel = supabase
-      .channel('chat_messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-        },
-        async (payload) => {
-          const id = (payload.new as { id?: string } | null)?.id;
-          if (!id) return;
-          const hydrated = await fetchMessageById(id);
-          if (hydrated && !hydrated.is_deleted) {
-            onInsert(hydrated);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chat_messages',
-        },
-        async (payload) => {
-          const next = payload.new as { id?: string; is_deleted?: boolean } | null;
-          if (!next?.id) return;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
-          if (next.is_deleted) {
-            onDelete(next.id);
-            return;
-          }
-
-          const hydrated = await fetchMessageById(next.id);
-          if (hydrated) {
-            onUpdate(hydrated);
-          }
+    (async () => {
+      // Realtime postgres_changes respects RLS. The chat SELECT policy is
+      // TO authenticated, so the realtime socket must carry the member JWT or
+      // this client silently receives no events. The custom accessToken setup
+      // doesn't guarantee the socket is authenticated, so set it explicitly
+      // before subscribing.
+      const token = await getAccessToken();
+      if (token) {
+        try {
+          await supabase.realtime.setAuth(token);
+        } catch (e) {
+          console.error('Failed to authenticate realtime socket:', e);
         }
-      )
-      .subscribe();
+      }
+      if (cancelled) return;
+
+      channel = supabase
+        .channel('chat_messages')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+          async (payload) => {
+            const id = (payload.new as { id?: string } | null)?.id;
+            if (!id) return;
+            const hydrated = await fetchMessageById(id);
+            if (hydrated && !hydrated.is_deleted) {
+              onInsert(hydrated);
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'chat_messages' },
+          async (payload) => {
+            const next = payload.new as { id?: string; is_deleted?: boolean } | null;
+            if (!next?.id) return;
+
+            if (next.is_deleted) {
+              onDelete(next.id);
+              return;
+            }
+
+            const hydrated = await fetchMessageById(next.id);
+            if (hydrated) {
+              onUpdate(hydrated);
+            }
+          }
+        )
+        .subscribe();
+    })();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
     };
   },
 };

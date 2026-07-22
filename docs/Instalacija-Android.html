@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NK Čelik — Instalacija aplikacije (Android)</title>
+<style>
+  :root { --gold: #D4AF37; --black: #0b0b0b; --ink: #1a1a1a; --muted: #5b5b5b; --line: #e6e6e6; --soft:#faf7ec; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    color: var(--ink); line-height: 1.5; font-size: 12.5pt;
+    background: #fff;
+  }
+  .page { max-width: 800px; margin: 0 auto; padding: 28px 34px 40px; }
+
+  header {
+    background: var(--black); color: #fff; border-radius: 14px;
+    padding: 22px 26px; display: flex; align-items: center; gap: 18px;
+    border: 2px solid var(--gold);
+  }
+  .badge {
+    width: 58px; height: 58px; border-radius: 50%; flex: none;
+    background: var(--gold); color: var(--black);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20pt; letter-spacing: -1px;
+  }
+  header h1 { margin: 0; font-size: 19pt; color: var(--gold); }
+  header p { margin: 3px 0 0; color: #e9e9e9; font-size: 11pt; }
+
+  .lead {
+    margin: 18px 0 6px; padding: 14px 16px; background: var(--soft);
+    border-left: 4px solid var(--gold); border-radius: 8px; font-size: 11.5pt;
+  }
+  .lead b { color: var(--black); }
+
+  h2 {
+    font-size: 12pt; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--black); margin: 22px 0 10px; border-bottom: 2px solid var(--line);
+    padding-bottom: 6px;
+  }
+
+  ol.steps { list-style: none; counter-reset: s; margin: 0; padding: 0; }
+  ol.steps > li {
+    counter-increment: s; position: relative; padding: 4px 0 16px 46px; margin: 0;
+    break-inside: avoid;
+  }
+  ol.steps > li::before {
+    content: counter(s); position: absolute; left: 0; top: 0;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gold); color: var(--black);
+    font-weight: 800; font-size: 13pt;
+    display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps > li h3 { margin: 4px 0 4px; font-size: 12.5pt; }
+  ol.steps > li p { margin: 3px 0; }
+  .path {
+    display: inline-block; background: #f1f1f1; border: 1px solid var(--line);
+    border-radius: 6px; padding: 1px 7px; font-family: Consolas, monospace;
+    font-size: 10.5pt; color: #333;
+  }
+  .note {
+    margin: 8px 0; padding: 10px 12px; border-radius: 8px;
+    background: #fff8e1; border: 1px solid #f0d98a; font-size: 11pt;
+  }
+  .warn {
+    margin: 8px 0; padding: 10px 12px; border-radius: 8px;
+    background: #fdecec; border: 1px solid #f3b7b7; font-size: 11pt;
+  }
+  .tip { color: var(--muted); font-size: 10.5pt; margin-top: 2px; }
+
+  .twocol { display: flex; gap: 18px; flex-wrap: wrap; }
+  .twocol > div { flex: 1 1 300px; }
+
+  footer {
+    margin-top: 26px; padding-top: 14px; border-top: 2px solid var(--line);
+    color: var(--muted); font-size: 10pt; display: flex; justify-content: space-between; gap: 12px;
+  }
+  footer b { color: var(--ink); }
+
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    .page { max-width: none; margin: 0; padding: 0; }
+    body { font-size: 11pt; }
+    header { border-radius: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="badge">NK</div>
+    <div>
+      <h1>NK Čelik — Mobilna aplikacija</h1>
+      <p>Uputstvo za instalaciju na Android telefon</p>
+    </div>
+  </header>
+
+  <div class="lead">
+    Aplikacija se za sada instalira <b>ručno</b>, preuzimanjem datoteke sa naše web
+    stranice, jer još nije objavljena na Google Play Store-u. Zbog toga Android
+    traži da <b>dozvolite instalaciju iz nepoznatog izvora</b> — to je normalno i
+    sigurno. Pratite korake ispod; cijeli postupak traje 1–2 minute.
+  </div>
+
+  <p class="tip"><b>Potrebno:</b> Android telefon (verzija 8 ili novija) i internet konekcija.</p>
+
+  <h2>Instalacija — korak po korak</h2>
+  <ol class="steps">
+    <li>
+      <h3>Preuzmite aplikaciju</h3>
+      <p>Na <b>Android telefonu</b> otvorite našu web stranicu i dodirnite dugme
+        <b>„Preuzmi aplikaciju (APK)”</b>. Sačekajte da se preuzimanje datoteke
+        <span class="path">nk-celik.apk</span> završi.</p>
+    </li>
+    <li>
+      <h3>Otvorite preuzetu datoteku</h3>
+      <p>Povucite obavještenja sa vrha ekrana i dodirnite preuzetu datoteku —
+        ili otvorite aplikaciju <span class="path">Files / Fajlovi</span> →
+        <span class="path">Downloads / Preuzimanja</span> i dodirnite
+        <b>nk-celik.apk</b>.</p>
+    </li>
+    <li>
+      <h3>Dozvolite instalaciju iz ovog izvora</h3>
+      <p>Android će prikazati poruku: <i>„Iz sigurnosnih razloga telefon ne smije
+        instalirati nepoznate aplikacije iz ovog izvora.”</i></p>
+      <p>Dodirnite <b>Postavke / Settings</b>, pa uključite prekidač
+        <b>„Dozvoli iz ovog izvora” / „Allow from this source”</b>, i vratite se
+        nazad dugmetom <b>Nazad</b>.</p>
+      <p class="tip">Alternativno: <span class="path">Postavke → Aplikacije → Poseban pristup →
+        Instaliranje nepoznatih aplikacija</span> → odaberite preglednik (Chrome) → Dozvoli.</p>
+    </li>
+    <li>
+      <h3>Instalirajte</h3>
+      <p>Dodirnite <b>„Instaliraj” / „Install”</b> i sačekajte nekoliko sekundi
+        dok se aplikacija ne instalira.</p>
+    </li>
+    <li>
+      <h3>Ako se pojavi upozorenje „Play Protect”</h3>
+      <p>Google može prikazati poruku poput <i>„Nepoznata aplikacija”</i> ili
+        <i>„Blokirano”</i>. Dodirnite <b>„Više detalja” / „More details”</b>, pa
+        <b>„Svejedno instaliraj” / „Install anyway”</b>.</p>
+      <div class="note">Ovo upozorenje se pojavljuje <b>samo zato što aplikacija nije
+        preuzeta sa Play Store-a</b>. Aplikacija je sigurna i dolazi direktno od NK Čelik.</div>
+    </li>
+    <li>
+      <h3>Otvorite i prijavite se</h3>
+      <p>Dodirnite <b>„Otvori” / „Open”</b>. U aplikaciji se prijavite:</p>
+      <div class="twocol">
+        <div><p>• <b>E-mailom</b> i svojim <b>članskim brojem</b>, ili</p></div>
+        <div><p>• <b>Imenom, prezimenom</b> i <b>članskim brojem</b>.</p></div>
+      </div>
+      <p class="tip">Nemate članski broj? Možete nastaviti kao <b>gost</b> i pregledati vijesti.</p>
+    </li>
+  </ol>
+
+  <h2>Česta pitanja</h2>
+  <div class="twocol">
+    <div>
+      <p><b>Je li sigurno?</b><br>Da. Upozorenja se pojavljuju kod svake aplikacije koja
+        se ne instalira sa Play Store-a. Ova aplikacija dolazi direktno od kluba.</p>
+    </div>
+    <div>
+      <p><b>Ne mogu otvoriti APK?</b><br>Provjerite da je preuzimanje završeno i otvorite
+        datoteku iz <span class="path">Preuzimanja</span>.</p>
+    </div>
+    <div>
+      <p><b>Imam iPhone?</b><br>iOS (iPhone) verzija dolazi uskoro. Za sada je dostupna
+        samo Android verzija.</p>
+    </div>
+    <div>
+      <p><b>Ažuriranja?</b><br>Manje izmjene stižu automatski. Za veće nadogradnje
+        objavićemo novu datoteku na stranici.</p>
+    </div>
+  </div>
+
+  <div class="warn" style="margin-top:16px">
+    <b>Napomena:</b> Instalirajte aplikaciju isključivo sa naše zvanične web stranice
+    <b>nkcelik.ba</b>. Nemojte preuzimati APK sa drugih izvora.
+  </div>
+
+  <footer>
+    <div>NK Čelik — zvanična mobilna aplikacija · <b>nkcelik.ba</b></div>
+    <div>Podrška: <b>info@nkcelik.ba</b></div>
+  </footer>
+
+</div>
+</body>
+</html>
