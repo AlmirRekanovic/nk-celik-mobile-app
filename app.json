@@ -33,6 +33,7 @@
         "backgroundColor": "#000000"
       },
       "package": "com.nkcelik.app",
+      "googleServicesFile": "./google-services.json",
       "jsEngine": "hermes",
       "permissions": [
         "CAMERA",
