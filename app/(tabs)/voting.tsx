@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Platform,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect } from 'expo-router';
@@ -64,8 +65,13 @@ export default function VotingScreen() {
 
     const success = await castVote(pollId, member.id, optionValue);
 
-    if (success) {
-      await loadPolls();
+    // Reload either way: on success to show the tally, on failure (e.g. the
+    // member already voted from another device) to reconcile the UI with the
+    // real state instead of silently doing nothing.
+    await loadPolls();
+
+    if (!success) {
+      Alert.alert('Glasanje', 'Vaš glas nije zabilježen. Možda ste već glasali na ovoj anketi.');
     }
 
     setVotingPollId(null);

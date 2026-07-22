@@ -105,9 +105,13 @@ export async function getActivePolls(memberId?: string): Promise<PollWithVotes[]
 
     let ownVotes: PollVote[] = [];
     if (memberId) {
+      // RLS already restricts poll_votes to the caller's own rows, but scope
+      // the query explicitly too so a future policy change can't surface
+      // another member's vote as this user's.
       const { data } = await supabase
         .from('poll_votes')
         .select('*')
+        .eq('member_id', memberId)
         .in('poll_id', pollIds);
       ownVotes = data || [];
     }
