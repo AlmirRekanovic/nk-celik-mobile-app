@@ -41,3 +41,7 @@ deploy-security.ps1
 
 # supabase local link state
 supabase/.temp/
+
+# member PII export — never commit
+clanovi.csv
+*.csv
