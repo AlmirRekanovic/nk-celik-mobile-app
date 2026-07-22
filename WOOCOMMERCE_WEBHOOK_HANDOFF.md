@@ -10,7 +10,7 @@ When a customer buys a ticket product on **nkcelik.ba**, WooCommerce should POST
 
 - **Trigger:** Order status change (we filter server-side to `completed` and `processing`)
 - **Direction:** WooCommerce → Supabase (one-way, HTTPS POST)
-- **Auth:** None required on the webhook itself (endpoint is public, JWT verification is disabled on this function)
+- **Auth:** WooCommerce's built-in **HMAC signature**, using the webhook **Secret** (REQUIRED — see §3). A wrong/empty secret → HTTP 401 and no ticket is created.
 - **Body:** Standard WooCommerce `Order` JSON — no custom transformations needed
 
 ---
@@ -22,10 +22,14 @@ POST https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/woocommerce-webhook
 Content-Type: application/json
 ```
 
-No `Authorization` header, no secret, no `X-WC-Webhook-Signature` verification on our side. WooCommerce's default webhook delivery works out of the box.
+The webhook's **Secret** must be set (§3). WooCommerce signs each delivery with
+it (`X-WC-Webhook-Signature`) and our function verifies it. No other auth header
+is needed.
 
 Success response: HTTP `200` with `{ "success": true, "message": "N ticket(s) created" }`.
+Already processed (re-delivery): HTTP `200` with `{ "success": true, "duplicate": true }` — safe to ignore; deliveries are idempotent.
 Ignored (non-completed) order: HTTP `200` with `{ "message": "Order not completed yet" }`.
+Bad/empty secret: HTTP `401` with `{ "error": "Invalid signature" }`.
 Errors: HTTP `500` with `{ "error": "...", "message": "..." }`.
 
 ---
@@ -42,12 +46,14 @@ Errors: HTTP `500` with `{ "error": "...", "message": "..." }`.
 | Status | **Active** |
 | Topic | **Order updated** |
 | Delivery URL | `https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/woocommerce-webhook` |
-| Secret | *(leave empty)* |
+| **Secret** | **⟨WC_WEBHOOK_SECRET — sent separately in a secure message⟩** |
 | API Version | `WP REST API Integration v3` |
 
-4. **Save**. Then open the webhook again and click **Deliver** to send a test payload — the log should show `HTTP 200`.
+4. **Save**. Then open the webhook again and click **Deliver** to send a test payload — the log should show `HTTP 200` (not 401).
 
-> If an old webhook pointing to the same URL exists but is inactive or failing, delete it and create a fresh one — do not just re-enable, WooCommerce sometimes caches a bad state.
+> **The Secret is required and must match exactly** (no leading/trailing spaces or newlines). A wrong or empty secret returns HTTP 401 and no ticket is created.
+>
+> **Only ONE webhook may point at this URL.** If a duplicate exists (one with the right secret, one without), each order fires both and you'll see a mix of 200 and 401 in the logs — delete the extra one. If an old webhook is failing, delete it and create a fresh one rather than re-enabling it.
 
 ---
 
@@ -205,7 +211,7 @@ After creating the webhook, verify each of these:
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Log shows `HTTP 401 Unauthorized` | The Edge Function has "Verify JWT" enabled in the Supabase dashboard | We need to toggle it OFF in Supabase → Edge Functions → `woocommerce-webhook` → Settings. (Not something the WP dev can fix.) |
+| Log shows `HTTP 401` | The webhook **Secret** is wrong/empty, or a **duplicate webhook** with no secret exists | Set the Secret to the exact value we provided; delete any duplicate webhook pointing at the same URL |
 | Log shows `HTTP 200` but ticket never appears in app | Order status wasn't `completed`/`processing` when webhook fired, OR email mismatch between order and member profile | Re-trigger the webhook after status hits Completed; check the member's email in the app profile |
 | Log shows `HTTP 500` | Malformed payload or DB error | Copy the response body and send to us with the order number |
 | Log shows `HTTP 405` | Delivery is using GET instead of POST | Recreate the webhook — WooCommerce sometimes ships broken |
