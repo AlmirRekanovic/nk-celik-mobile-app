@@ -61,15 +61,20 @@ async function readToken(): Promise<StoredToken | null> {
 export async function getAccessToken(): Promise<string | null> {
   const stored = await readToken();
   if (!stored) return null;
-  if (new Date(stored.expires_at).getTime() <= Date.now()) return null;
+  const expiry = new Date(stored.expires_at).getTime();
+  // A missing/malformed expiry (NaN) is treated as expired, not as
+  // valid-forever, so a bad token never gets used indefinitely.
+  if (isNaN(expiry) || expiry <= Date.now()) return null;
   return stored.token;
 }
 
-/** True when there is a member session whose token is missing, expired, or close to it. */
+/** True when there is a member session whose token is missing, expired, malformed, or close to expiring. */
 export async function tokenNeedsRefresh(): Promise<boolean> {
   const member = await getStoredMember();
   if (!member) return false;
   const stored = await readToken();
   if (!stored) return true;
-  return new Date(stored.expires_at).getTime() - Date.now() < REFRESH_THRESHOLD_MS;
+  const expiry = new Date(stored.expires_at).getTime();
+  if (isNaN(expiry)) return true;
+  return expiry - Date.now() < REFRESH_THRESHOLD_MS;
 }

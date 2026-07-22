@@ -4,6 +4,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+// Length-independent, constant-time string compare (avoids leaking the secret
+// via per-character timing).
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const ab = enc.encode(a);
+  const bb = enc.encode(b);
+  let diff = ab.length ^ bb.length;
+  const len = Math.max(ab.length, bb.length);
+  for (let i = 0; i < len; i++) {
+    diff |= (ab[i] ?? 0) ^ (bb[i] ?? 0);
+  }
+  return diff === 0;
+}
+
 interface NormalizedPost {
   id: number;
   title: string;
@@ -76,19 +90,22 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Validate webhook secret if configured
+    // Require the shared secret — fail closed if it isn't configured, so an
+    // unset env var can never leave this endpoint open to fake-post spam that
+    // would broadcast a push to every user.
     const webhookSecret = Deno.env.get("WORDPRESS_WEBHOOK_SECRET");
-    if (webhookSecret) {
-      const incomingSecret = req.headers.get("X-Webhook-Secret");
-      if (incomingSecret !== webhookSecret) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          {
-            status: 401,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
+    if (!webhookSecret) {
+      console.error("WORDPRESS_WEBHOOK_SECRET is not configured — rejecting all deliveries");
+      return new Response(
+        JSON.stringify({ error: "Server misconfigured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (!timingSafeEqual(req.headers.get("X-Webhook-Secret") ?? "", webhookSecret)) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const rawPayload = await req.json();

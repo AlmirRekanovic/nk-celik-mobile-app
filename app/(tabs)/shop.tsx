@@ -15,19 +15,6 @@ import { ShoppingCart, ArrowLeft } from '@/components/Icons';
 
 const SHOP_URL = 'https://nkcelik.ba/shop/';
 
-// A WooCommerce page pulls in many subresources (images, fonts, analytics,
-// the cart fragments AJAX call). Any one of them can return a 4xx/5xx without
-// the page itself being broken. We only surface an error when the MAIN
-// document fails, otherwise a single 404 favicon would blank the whole shop.
-function isMainFrameUrl(url?: string): boolean {
-  if (!url) return true;
-  try {
-    return new URL(url).hostname === new URL(SHOP_URL).hostname;
-  } catch {
-    return false;
-  }
-}
-
 // Some hosting WAFs serve a block page (or nothing) to the stock Android
 // WebView user-agent. A normal Chrome UA avoids that.
 const USER_AGENT =
@@ -37,6 +24,12 @@ export default function ShopScreen() {
   const { member, isGuest } = useAuth();
   const { isDarkMode } = useTheme();
   const webviewRef = useRef<WebView>(null);
+  // The URL of the current top-level document. On Android, onError/onHttpError
+  // fire for every resource (including same-origin subresources like images and
+  // the cart-fragments AJAX call); only a failure whose URL matches the main
+  // document should ever surface an error, otherwise one 404 subresource blanks
+  // the whole shop.
+  const mainUrlRef = useRef<string>(SHOP_URL);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [canGoBack, setCanGoBack] = useState(false);
@@ -45,7 +38,11 @@ export default function ShopScreen() {
   const backgroundColor = isDarkMode ? '#000000' : '#F9FAFB';
   const subtextColor = isDarkMode ? '#9CA3AF' : '#6B7280';
 
+  const isMainDocument = (url?: string) => !url || url === mainUrlRef.current;
+
   const handleNavStateChange = (state: WebViewNavigation) => {
+    // onNavigationStateChange reports the main-frame URL (loading and settled).
+    if (state.url) mainUrlRef.current = state.url;
     setCanGoBack(state.canGoBack);
   };
 
@@ -105,11 +102,14 @@ export default function ShopScreen() {
               style={styles.webview}
               originWhitelist={['*']}
               userAgent={USER_AGENT}
-              onLoadStart={() => setLoading(true)}
+              onLoadStart={({ nativeEvent }) => {
+                if (nativeEvent.url) mainUrlRef.current = nativeEvent.url;
+                setLoading(true);
+              }}
               onLoadEnd={() => setLoading(false)}
               onError={({ nativeEvent }) => {
-                // Ignore subresource load failures; only the main document matters.
-                if (!isMainFrameUrl(nativeEvent.url)) return;
+                // Only a main-document network failure should blank the shop.
+                if (!isMainDocument(nativeEvent.url)) return;
                 setLoading(false);
                 setError(
                   nativeEvent.description ||
@@ -117,8 +117,9 @@ export default function ShopScreen() {
                 );
               }}
               onHttpError={({ nativeEvent }) => {
-                // Only the main page's status should ever show the error screen.
-                if (!isMainFrameUrl(nativeEvent.url)) return;
+                // Subresource 4xx/5xx (images, analytics, cart-fragments) are
+                // normal on a WooCommerce page — never let them blank the shop.
+                if (!isMainDocument(nativeEvent.url)) return;
                 if (nativeEvent.statusCode >= 400) {
                   setLoading(false);
                   setError(`Server je vratio grešku (${nativeEvent.statusCode}).`);

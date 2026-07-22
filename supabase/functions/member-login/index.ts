@@ -38,6 +38,14 @@ function isRateLimited(ip: string): boolean {
   return entry.count > RATE_LIMIT_MAX;
 }
 
+// Escape LIKE/ILIKE wildcards so an attacker can't pass "%" or "_" as the
+// email/name to match an arbitrary member holding a given member number.
+// Without this, member_id (a low-entropy printed value) alone would be enough
+// to log in as — or impersonate — any member, including an admin.
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -92,8 +100,8 @@ Deno.serve(async (req: Request) => {
       .eq("member_id", memberId);
 
     query = useNameLogin
-      ? query.ilike("first_name", firstName).ilike("last_name", lastName)
-      : query.ilike("email", email);
+      ? query.ilike("first_name", escapeLike(firstName)).ilike("last_name", escapeLike(lastName))
+      : query.ilike("email", escapeLike(email));
 
     const { data: member, error } = await query.maybeSingle();
 
@@ -119,7 +127,9 @@ Deno.serve(async (req: Request) => {
         role: "authenticated",
         aud: "authenticated",
         iss: "member-login",
-        email: member.email ?? email ?? "",
+        // Only the DB value drives the email claim (it gates ticket
+        // visibility via current_jwt_email()); never attacker-supplied input.
+        email: member.email ?? "",
         is_admin: member.is_admin === true,
         iat: nowSeconds,
         exp: expSeconds,

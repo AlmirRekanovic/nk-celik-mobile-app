@@ -86,8 +86,13 @@ Deno.serve(async (req: Request) => {
     );
     const expected = btoa(String.fromCharCode(...digest));
 
-    if (signature.length !== expected.length ||
-        !signature.split('').every((c, i) => c === expected[i])) {
+    // Constant-time compare to avoid leaking the expected signature via timing.
+    let sigDiff = signature.length ^ expected.length;
+    const sigLen = Math.max(signature.length, expected.length);
+    for (let i = 0; i < sigLen; i++) {
+      sigDiff |= (signature.charCodeAt(i) || 0) ^ (expected.charCodeAt(i) || 0);
+    }
+    if (sigDiff !== 0) {
       console.warn('Invalid webhook signature — rejecting');
       return new Response(
         JSON.stringify({ error: 'Invalid signature' }),

@@ -45,9 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // rely on the AsyncStorage prompt flag to gate token registration.
       const { status } = await Notifications.getPermissionsAsync();
       if (status === 'granted') {
-        registerForPushNotificationsAsync().catch(error => {
-          console.log('Auto push registration failed:', error);
-        });
+        // Ensure a valid member JWT exists first. On the launch right after
+        // the auth migration (member stored, no token yet) or after expiry,
+        // refreshSessionIfNeeded mints the token; without this the RPC would
+        // run with the anon key (auth.uid() null) and silently no-op until
+        // the next app start.
+        refreshSessionIfNeeded()
+          .then(() => registerForPushNotificationsAsync())
+          .catch(error => {
+            console.log('Auto push registration failed:', error);
+          });
         return;
       }
 
