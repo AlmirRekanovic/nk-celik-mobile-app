@@ -29,6 +29,9 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
+          // Hide the tab bar while the keyboard is open so nothing sits between
+          // a text input (e.g. the chat box) and the keyboard.
+          tabBarHideOnKeyboard: true,
           tabBarActiveTintColor: '#D4AF37',
           tabBarInactiveTintColor: isDarkMode ? '#9CA3AF' : '#6B7280',
           tabBarStyle: {

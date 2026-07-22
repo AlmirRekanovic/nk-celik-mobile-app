@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "437894841109",
+    "firebase_url": "https://celik-2b607.firebaseio.com",
+    "project_id": "celik-2b607",
+    "storage_bucket": "celik-2b607.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:437894841109:android:04ecf7efe147f803",
+        "android_client_info": {
+          "package_name": "com.example.celik"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIdIfcHVwZfUJ_Yg2drIum93btGVASzFU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

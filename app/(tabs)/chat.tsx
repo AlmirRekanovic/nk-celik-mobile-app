@@ -229,8 +229,12 @@ export default function ChatScreen() {
 
       <KeyboardAvoidingView
         style={styles.content}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
+        // On Android, Expo's default softwareKeyboardLayoutMode="resize" already
+        // shrinks the window for the keyboard, so KeyboardAvoidingView must stay
+        // out of the way — behavior="height" + an offset here double-adjusts and
+        // leaves a black gap under the input. iOS still needs padding behavior.
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
       >
         <FlatList
           ref={flatListRef}
