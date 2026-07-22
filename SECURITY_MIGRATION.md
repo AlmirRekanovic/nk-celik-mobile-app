@@ -2,8 +2,29 @@
 
 This release replaces the client-asserted auth model (anon key +
 `set_member_context`) with server-issued JWTs and real row-level security.
-**The database migration and the app update must ship together** — old app
-builds intentionally lose access once the migration runs.
+
+> ## Status (2026-07-22)
+> **Backend is fully deployed and verified on the live project (`nkcelik`).**
+> - ✅ Secrets set: `JWT_SECRET`, `WC_WEBHOOK_SECRET`, `WORDPRESS_WEBHOOK_SECRET`
+> - ✅ Migrations `20260721160000` + `20260721170000` applied and recorded
+> - ✅ All four edge functions deployed (member-login, send-push-notification,
+>   woocommerce-webhook, wordpress-webhook)
+> - ✅ Verified: valid login works, name-fallback login works, wildcard-injection
+>   login rejected, anon cannot read members/tickets, guests can read vote counts
+>
+> **Because the migration is live, the old app build no longer works for end
+> users** — they cannot log in until the new build (see below) is distributed.
+> That is the one urgent remaining item.
+>
+> **Remaining manual steps (need a human):**
+> 1. Distribute the new Android build (in progress on EAS) to users.
+> 2. WooCommerce → Settings → Advanced → Webhooks: set each webhook's **Secret**
+>    to the `WC_WEBHOOK_SECRET` value.
+> 3. WordPress webhook sender: add header `X-Webhook-Secret: <WORDPRESS_WEBHOOK_SECRET>`.
+> 4. **Revoke** the old WooCommerce REST API consumer key/secret (they were
+>    leaked via `eas.json` + old bundles).
+>
+> The steps below are the original runbook, kept for reference / re-deploys.
 
 ## What changed
 
