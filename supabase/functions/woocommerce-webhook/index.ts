@@ -6,6 +6,35 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
 
+// Matches Bosnian "sezon*" and English "season" in names/categories.
+const SEASON_RE = /sezon|season/i;
+
+const WC_STORE_API = 'https://nkcelik.ba/wp-json/wc/store/v1/products';
+
+// WooCommerce order webhooks do NOT include a product's taxonomy categories in
+// the line items, so a season ticket that is distinguished ONLY by category
+// (e.g. "sezonske-ulaznice") can't be detected from the payload. Look the
+// product up via the PUBLIC Store API (no API keys needed) and check its
+// categories. Fails safe to false so a lookup error just yields a normal ticket.
+async function isSeasonByCategory(productId: number): Promise<boolean> {
+  try {
+    const res = await fetch(`${WC_STORE_API}/${productId}`, {
+      headers: { 'User-Agent': 'nk-celik-webhook' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) {
+      console.warn(`Store API lookup for product ${productId} returned ${res.status}`);
+      return false;
+    }
+    const product = await res.json();
+    const cats = Array.isArray(product?.categories) ? product.categories : [];
+    return cats.some((c: any) => SEASON_RE.test(`${c?.slug ?? ''} ${c?.name ?? ''}`));
+  } catch (e) {
+    console.error(`Store API category lookup failed for product ${productId}:`, e);
+    return false;
+  }
+}
+
 interface WooCommerceOrder {
   id: number;
   order_key: string;
@@ -162,12 +191,19 @@ Deno.serve(async (req: Request) => {
         }
 
         if (!isSeasonTicket && categoryMeta) {
-          isSeasonTicket = /sezonsk|season/i.test(String(categoryMeta.value));
+          isSeasonTicket = SEASON_RE.test(String(categoryMeta.value));
         }
       }
 
+      // 1) product name (e.g. "Jug sezonska")
       if (!isSeasonTicket) {
-        isSeasonTicket = /sezonsk|season/i.test(item.name);
+        isSeasonTicket = SEASON_RE.test(item.name);
+      }
+
+      // 2) product category via the public Store API (e.g. category
+      //    "sezonske-ulaznice" on a product whose name has no "sezon").
+      if (!isSeasonTicket && item.product_id) {
+        isSeasonTicket = await isSeasonByCategory(item.product_id);
       }
 
       for (let i = 0; i < item.quantity; i++) {
