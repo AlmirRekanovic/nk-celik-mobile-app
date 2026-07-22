@@ -46,6 +46,18 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
+// Member names are stored transliterated to ASCII (č→c, š→s, ž→z, đ→d, …), so
+// normalize the typed name the same way. That lets a member log in whether they
+// type "Kurbegović" or "Kurbegovic".
+const DIA_FROM = "čćšžČĆŠŽđĐüä";
+const DIA_TO = "ccszCCSZdDua";
+function stripDiacritics(value: string): string {
+  return value.replace(/[čćšžČĆŠŽđĐüä]/g, (c) => {
+    const i = DIA_FROM.indexOf(c);
+    return i >= 0 ? DIA_TO[i] : c;
+  });
+}
+
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -100,7 +112,9 @@ Deno.serve(async (req: Request) => {
       .eq("member_id", memberId);
 
     query = useNameLogin
-      ? query.ilike("first_name", escapeLike(firstName)).ilike("last_name", escapeLike(lastName))
+      ? query
+          .ilike("first_name", escapeLike(stripDiacritics(firstName)))
+          .ilike("last_name", escapeLike(stripDiacritics(lastName)))
       : query.ilike("email", escapeLike(email));
 
     const { data: member, error } = await query.maybeSingle();
