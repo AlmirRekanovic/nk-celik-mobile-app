@@ -75,8 +75,9 @@ export default function TabLayout() {
           options={{
             title: 'Chat',
             tabBarIcon: ({ color }) => <MessageCircle size={20} color={color} />,
-            // Admin gets Skeniraj here instead; guests never see chat.
-            href: isGuest || isAdmin ? null : undefined,
+            // Chat is a primary tab for all logged-in members (admins included);
+            // guests can't use chat so it's hidden for them.
+            href: isGuest ? null : undefined,
           }}
         />
         <Tabs.Screen

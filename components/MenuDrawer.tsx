@@ -18,7 +18,6 @@ import {
   Vote,
   ShoppingBag,
   Settings as SettingsIcon,
-  MessageCircle,
   X,
   ChevronRight,
 } from '@/components/Icons';
@@ -41,11 +40,10 @@ const DRAWER_WIDTH = Math.min(320, Dimensions.get('window').width * 0.85);
 export default function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  const { member, isGuest } = useAuth();
+  const { member } = useAuth();
   const insets = useSafeAreaInsets();
   const slide = useRef(new Animated.Value(DRAWER_WIDTH)).current;
   const fade = useRef(new Animated.Value(0)).current;
-  const isAdmin = member?.is_admin || false;
 
   useEffect(() => {
     if (visible) {
@@ -81,13 +79,6 @@ export default function MenuDrawer({ visible, onClose }: MenuDrawerProps) {
       Icon: ShoppingBag,
       route: '/(tabs)/shop',
       show: true,
-    },
-    {
-      key: 'chat',
-      label: 'Chat',
-      Icon: MessageCircle,
-      route: '/(tabs)/chat',
-      show: isAdmin && !isGuest,
     },
     {
       key: 'settings',
