@@ -39,29 +39,13 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   }
 
   if (finalStatus !== 'granted') {
-    console.log('Failed to get push token for push notification!');
+    console.log('[push] OS notification permission not granted');
     return null;
   }
 
-  try {
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-
-    token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-
-    if (token) {
-      const { error } = await supabase.rpc('register_push_token', {
-        p_token: token,
-        p_platform: Platform.OS,
-      });
-      if (error) throw error;
-    }
-  } catch (error) {
-    console.error('Error registering push token:', error);
-    return null;
-  }
-
+  // Android needs its channel created before the token is requested.
   if (Platform.OS === 'android') {
-    Notifications.setNotificationChannelAsync('default', {
+    await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
@@ -69,6 +53,48 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     });
   }
 
+  const projectId =
+    Constants.expoConfig?.extra?.eas?.projectId ??
+    (Constants as any).easConfig?.projectId;
+
+  if (!projectId) {
+    console.error('[push] No EAS projectId found (Constants.expoConfig.extra.eas.projectId)');
+    return null;
+  }
+
+  try {
+    token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+  } catch (error) {
+    // The usual cause on Android is missing Firebase/FCM config in the build
+    // (no google-services.json). getExpoPushTokenAsync then throws before any
+    // token exists. See PUSH_NOTIFICATIONS.md → "Android FCM setup".
+    console.error(
+      '[push] getExpoPushTokenAsync failed — on Android this almost always means ' +
+        'FCM/google-services.json is not configured in the build. Error:',
+      error
+    );
+    return null;
+  }
+
+  if (!token) {
+    console.error('[push] Expo returned an empty push token');
+    return null;
+  }
+
+  try {
+    const { error } = await supabase.rpc('register_push_token', {
+      p_token: token,
+      p_platform: Platform.OS,
+    });
+    if (error) throw error;
+  } catch (error) {
+    // Auth/RLS side — the caller must be a logged-in member (JWT present) so
+    // register_push_token can resolve auth.uid().
+    console.error('[push] Failed to save push token to Supabase:', error);
+    return null;
+  }
+
+  console.log('[push] registered token successfully');
   return token;
 }
 

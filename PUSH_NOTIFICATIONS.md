@@ -1,169 +1,141 @@
-# Push Notifications Setup Guide
+# Push Notifications — Setup & Reference
 
-Push notifications have been implemented for new news posts and polls. Users will receive notifications on their mobile devices when new content is published.
+Push notifications fire for new news posts and new polls. The app code and the
+Supabase backend are wired and verified. **The one missing piece is Android
+FCM (Firebase Cloud Messaging) configuration** — until that exists, devices
+cannot obtain a push token, so nothing is stored and nothing is delivered.
 
-## Features
+---
 
-- Push notifications for new news articles
-- Push notifications for new polls
-- User preference toggle in settings
-- Works on iOS and Android (not on web)
-- Automatic token registration on login
-- Secure storage of push tokens in Supabase
+## ⚠️ Current status / why push isn't working yet
 
-## How It Works
+- The `push_tokens` table is **empty** — no device has ever obtained a token.
+- Root cause: **there is no Firebase/FCM setup** (no `google-services.json`,
+  no `googleServicesFile` in `app.json`). On Expo SDK 54, Android push
+  requires FCM v1. Without it, `getExpoPushTokenAsync()` throws before any
+  token is produced.
+- Second gotcha: **remote push does NOT work in Expo Go on SDK 54.** You must
+  test on an installed EAS build (the APK), not Expo Go.
 
-### 1. User Registration
-When a member logs in to the app:
-- The app automatically requests notification permissions
-- If granted, an Expo push token is generated
-- The token is stored in the `push_tokens` table in Supabase
-- The token is associated with the member's ID
+Everything below the "Android FCM setup" section already works; do that section
+and rebuild, and push will start functioning.
 
-### 2. User Settings
-Members can control notifications:
-- Go to Settings tab
-- Toggle "Push obavještenja" switch
-- This enables/disables notifications without removing the token
+---
 
-### 3. Sending Notifications
+## Android FCM setup (the required step)
 
-#### Option A: Using the Edge Function Directly
+You need a Firebase project (uses your Google account). ~15 minutes.
 
-You can send notifications by calling the edge function:
+### 1. Create the Firebase project + Android app
+1. Go to <https://console.firebase.google.com> → **Add project** (name e.g.
+   "NK Celik"). Google Analytics is optional.
+2. In the project, **Add app → Android**.
+3. **Android package name:** `com.nkcelik.app` (must match `app.json`
+   `android.package` exactly).
+4. Register the app, then **download `google-services.json`**.
+
+### 2. Add the file to the project
+1. Put `google-services.json` in the project root
+   (`nk-celik-mobile-app/google-services.json`).
+2. Add this one line under `"android"` in `app.json`:
+   ```json
+   "android": {
+     "googleServicesFile": "./google-services.json",
+     "package": "com.nkcelik.app",
+     ...
+   }
+   ```
+   (Do NOT add this line before the file exists — EAS builds fail if it
+   points at a missing file.)
+3. `google-services.json` is safe to commit, but if you prefer not to, add it
+   as an EAS file secret instead — ask and I'll wire that variant.
+
+### 3. Give Expo permission to deliver to FCM (FCM v1 service account)
+Expo's push service sends to your FCM project on your behalf, so it needs a
+service-account key:
+1. Firebase Console → ⚙ **Project settings → Service accounts**.
+2. **Generate new private key** → downloads a JSON file.
+3. Upload it to Expo, either:
+   - `eas credentials` → **Android** → your build profile →
+     **Push Notifications: Manage your FCM V1 service account key** → upload
+     the JSON, **or**
+   - Expo dashboard → project → **Credentials → Android → FCM V1**.
+
+### 4. Rebuild
+```bash
+npm run build:android      # eas build --platform android --profile preview
+```
+Install the new APK on a physical device.
+
+---
+
+## iOS (when you build for iOS)
+
+iOS uses APNs, not FCM. EAS can generate and manage the APNs key automatically
+during `eas build --platform ios` if you sign in with an Apple Developer
+account. `app.json` already declares `UIBackgroundModes: ["remote-notification"]`.
+No Firebase needed for iOS.
+
+---
+
+## Testing checklist
+
+1. **Physical device**, app installed from the **EAS build** (not Expo Go, not
+   an emulator).
+2. **Logged in as a member** (not guest) — token registration needs a member
+   JWT so the server can resolve `auth.uid()`.
+3. Accept the notification permission prompt.
+4. Confirm a row appears:
+   ```sql
+   select member_id, platform, enabled, created_at from push_tokens order by created_at desc;
+   ```
+5. If empty, check the device logs for a `[push]` line — the code now logs the
+   exact failure (FCM/token vs. Supabase save).
+
+---
+
+## How it works (code)
+
+- `services/notifications.ts` → `registerForPushNotificationsAsync()`:
+  checks device + permission, creates the Android channel, gets the Expo push
+  token with the EAS `projectId`, then calls the `register_push_token` RPC.
+- `contexts/AuthContext.tsx`: on login (and on launch for stored members) it
+  ensures a valid JWT, then registers the token. Guests are not registered.
+- Token identity is server-side: `register_push_token` (SECURITY DEFINER)
+  stores `member_id = auth.uid()`; a device token moving between accounts is
+  reassigned via `ON CONFLICT (token)`.
+
+## Sending a notification
+
+The `send-push-notification` function is **not** callable with the anon key
+anymore. It requires the **service role** or an **admin member JWT**. Poll
+creation already calls it with the admin's token automatically. To send
+manually, use the service-role key:
 
 ```bash
-curl -X POST \
-  https://[YOUR-SUPABASE-URL]/functions/v1/send-push-notification \
-  -H "Authorization: Bearer [YOUR-SUPABASE-ANON-KEY]" \
+curl -X POST https://<project>.supabase.co/functions/v1/send-push-notification \
+  -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \
+  -H "apikey: <ANON_KEY>" \
   -H "Content-Type: application/json" \
-  -d '{
-    "title": "Nova vijest",
-    "body": "Čelik pobijedio 3-0!",
-    "type": "news",
-    "data": {
-      "postId": 12345,
-      "url": "https://nkcelik.ba/..."
-    }
-  }'
+  -d '{"title":"Nova vijest","body":"Čelik pobijedio 3-0!","type":"news","data":{"postId":123}}'
 ```
 
-#### Option B: Automating with WordPress Webhooks
+Per-type delivery honors each token's `news_enabled` / `polls_enabled` flags,
+and dead tokens (uninstalled apps) are pruned automatically from the response.
 
-To automatically send notifications when new content is published:
+## push_tokens schema
 
-1. Install a WordPress plugin like "WP Webhooks" or "Zapier for WordPress"
-2. Create a webhook that triggers on:
-   - New post published
-   - New poll created
-3. Configure the webhook to call your edge function
-
-#### Option C: Manual Testing
-
-For testing purposes, you can use the Supabase Dashboard:
-1. Go to your Supabase project
-2. Navigate to Edge Functions
-3. Select `send-push-notification`
-4. Test with sample JSON data
-
-## Database Schema
-
-### push_tokens Table
-- `id` (uuid) - Primary key
-- `member_id` (text) - References members table
-- `token` (text) - Expo push token (unique)
-- `platform` (text) - ios, android, or web
-- `enabled` (boolean) - Notification preference
-- `created_at` (timestamptz)
-- `updated_at` (timestamptz)
-
-## Edge Function API
-
-### Endpoint
-`POST /functions/v1/send-push-notification`
-
-### Request Body
-```json
-{
-  "title": "Notification Title",
-  "body": "Notification message",
-  "type": "news" | "poll",
-  "data": {
-    "postId": 123,
-    "additionalData": "..."
-  }
-}
-```
-
-### Response
-```json
-{
-  "message": "Push notifications sent successfully",
-  "sentCount": 150,
-  "results": [...]
-}
-```
-
-## Important Notes
-
-### Web Platform Limitation
-- Push notifications do NOT work on web browsers
-- Only works on physical iOS and Android devices
-- Development builds require Expo Go or EAS Development Client
-
-### Testing Requirements
-To test push notifications, you need:
-1. A physical iOS or Android device
-2. Expo Go app OR a development build
-3. The app must be built with EAS Build for production
-
-### EAS Build Configuration
-For production builds, you'll need:
-1. An Expo account
-2. EAS CLI configured
-3. Push notification credentials set up in Expo
-
-Run these commands to set up:
-```bash
-npm install -g eas-cli
-eas login
-eas build:configure
-```
-
-## Migration File
-
-The database migration has been created at:
-`supabase/migrations/20260113120000_create_push_tokens_schema.sql`
-
-Make sure to apply this migration to your Supabase database.
-
-## Security
-
-- Row Level Security (RLS) is enabled on the push_tokens table
-- Members can only view and manage their own tokens
-- The edge function can only be called with valid Supabase credentials
-- Push tokens are securely stored and never exposed to clients
+`id` (uuid) · `member_id` (**uuid**, FK members) · `token` (text, unique) ·
+`platform` (ios/android/web) · `enabled` · `news_enabled` · `polls_enabled` ·
+`created_at` · `updated_at`. RLS: a member sees/updates only their own rows;
+insert/delete go through the SECURITY DEFINER RPCs.
 
 ## Troubleshooting
 
-### Notifications Not Received
-1. Check device notification permissions in system settings
-2. Verify the push token was saved (query push_tokens table)
-3. Check the member has notifications enabled in app settings
-4. Verify the edge function was called successfully
-5. Check Expo push notification service status
-
-### Token Not Registering
-1. Make sure you're using a physical device
-2. Check console logs for permission errors
-3. Verify member is logged in (not guest mode)
-3. Check Supabase connection and RLS policies
-
-## Future Enhancements
-
-Possible improvements:
-- Notification history in the app
-- Scheduled notifications
-- Different notification channels for news vs polls
-- Rich notifications with images
-- Action buttons in notifications
+| Symptom | Likely cause |
+|---|---|
+| No token, `push_tokens` empty | FCM/google-services.json not configured (do the setup above); or testing in Expo Go |
+| `[push] getExpoPushTokenAsync failed` in logs | Android FCM missing in the build |
+| `[push] Failed to save push token` in logs | Not logged in as a member (no JWT), or network |
+| Token saved but no delivery | FCM V1 service-account key not uploaded to Expo (step 3) |
+| Works on Android, not iOS | APNs not set up — build iOS with an Apple account via EAS |

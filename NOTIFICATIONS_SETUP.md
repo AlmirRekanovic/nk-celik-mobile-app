@@ -1,5 +1,11 @@
 # Push Notifications Setup Guide
 
+> **⚠️ Before any of this works: Android push requires Firebase/FCM setup that
+> is not yet done.** See **`PUSH_NOTIFICATIONS.md` → "Android FCM setup"**. Until
+> `google-services.json` + FCM v1 credentials exist, no device can get a push
+> token (the `push_tokens` table stays empty). This doc covers the WordPress
+> webhook side, which is downstream of that.
+
 This guide explains how to set up push notifications for NK Čelik app for news articles and polls.
 
 ## Overview
