@@ -101,21 +101,28 @@ Deno.serve(async (req: Request) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const receivedSecret = req.headers.get("X-Webhook-Secret") ?? "";
+    // Accept the secret EITHER as the X-Webhook-Secret header OR as a ?secret=
+    // URL query param — whichever the sender can produce. The query param is the
+    // easiest for webhook plugins that can't reliably attach custom headers.
+    const reqUrl = new URL(req.url);
+    const headerSecret = req.headers.get("X-Webhook-Secret") ?? "";
+    const querySecret = reqUrl.searchParams.get("secret") ?? "";
+    const receivedSecret = headerSecret || querySecret;
     if (!timingSafeEqual(receivedSecret, webhookSecret)) {
       // Diagnostic (no secret value leaked) so the sender's delivery log shows
-      // WHY it's rejected: header missing vs. wrong length/value.
+      // WHY it's rejected.
       return new Response(
         JSON.stringify({
           error: "Unauthorized",
           diagnostic: {
-            header_name_expected: "X-Webhook-Secret",
-            header_received: receivedSecret.length > 0,
+            accepted: "Send the secret as header 'X-Webhook-Secret' OR append '?secret=<value>' to the URL.",
+            header_received: headerSecret.length > 0,
+            query_received: querySecret.length > 0,
             received_length: receivedSecret.length,
             expected_length: webhookSecret.length,
             hint: receivedSecret.length === 0
-              ? "The X-Webhook-Secret header did not arrive — check the header NAME (hyphens, not underscores) and that it's set as a request header."
-              : "The header arrived but its value is wrong — check for typos, extra spaces/quotes, or a truncated value.",
+              ? "No secret arrived (no header, no ?secret= query). Easiest fix: append ?secret=<value> to the webhook URL."
+              : "A secret arrived but the value is wrong — check for typos, extra spaces/quotes, or truncation.",
           },
         }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }

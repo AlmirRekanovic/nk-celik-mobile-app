@@ -30,18 +30,21 @@ The site already has **WP Webhooks 3.4.3**. Configure a **Send Data** trigger:
 
 1. WP Admin → **WP Webhooks → Send Data** (or "Triggers").
 2. Add/enable the trigger **"Post created / published"** (fires when a post is published).
-3. Set the **Webhook URL** to:
-   `https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/wordpress-webhook`
-4. **Add a custom HTTP header** (in the webhook's advanced/settings for that URL):
-   | Header name | Header value |
-   |---|---|
-   | `X-Webhook-Secret` | **⟨WORDPRESS_WEBHOOK_SECRET — sent separately in a secure message⟩** |
-5. Leave the body as the default post payload (see §4 — both formats are accepted).
-6. Save.
+3. Set the **Webhook URL** — **EASIEST: put the secret in the URL** (no custom header needed):
+   ```
+   https://qqolxourbfnatlbrrrpr.supabase.co/functions/v1/wordpress-webhook?secret=⟨WORDPRESS_WEBHOOK_SECRET⟩
+   ```
+   That single change is all the auth required.
+4. Leave the body as the default post payload (see §4 — both formats are accepted).
+5. Save. If **more than one** trigger/webhook points at this URL, put the
+   `?secret=` on **all** of them (or delete the duplicates).
 
-> **The header is required and must match exactly.** Without it (or with a wrong
-> value) our function returns **HTTP 401** and no notification is sent. This is
-> the current problem: the plugin is firing but the header is missing/wrong.
+> **Alternative to the query param:** use the plain URL
+> (`…/wordpress-webhook`) plus a request header `X-Webhook-Secret: <value>`.
+> Either works — the query param just avoids the plugin's custom-header quirks.
+>
+> If auth fails you get **HTTP 401** with a `diagnostic` object in the response
+> body (shown in your delivery log) that says exactly what's missing.
 
 ## 4. Payload (either format works)
 Our function accepts **both** the WordPress REST shape and the WP Webhooks shape:
